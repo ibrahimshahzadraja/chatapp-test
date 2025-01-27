@@ -35,7 +35,7 @@ function parseCookies(req) {
 }
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = "localhost";
+const hostname = "chatapp-test-ashy.vercel.app";
 const port = 3000;
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
