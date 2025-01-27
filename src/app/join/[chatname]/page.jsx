@@ -1,5 +1,4 @@
 "use client"
-import { socket } from '@/socket';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,6 +9,34 @@ export default function Chat() {
   const [password, setPassword] = useState("");
 
   const router = useRouter();
+
+    useEffect(() => {
+        async function auth(){
+            const res = await fetch("/api/users/getUser", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+            });
+            const data = await res.json();
+            console.log(data);
+            if(!data.success){
+                const res = await fetch("/api/users/tokenRefresh", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                });
+                const data = await res.json();
+                if(!data.success){
+                    router.push("/login");
+                }
+                console.log(data);
+            }
+        }
+        auth();
+
+    }, []);
 
   const joinRoom = async () => {
     setPassword("");

@@ -8,8 +8,8 @@ async function getUser(req, res, cookies) {
 
   if (!accessToken) {
     console.log("No access token found.");
-    res.writeHead(301, { Location: '/login' });
-    res.end();
+    res.writeHead(401, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ message: "Unauthorized", data: null, status: 401, success: false }));
     return;
   }
 
@@ -18,8 +18,8 @@ async function getUser(req, res, cookies) {
     req.headers['x-user-id'] = decodedToken?._id;
     console.log('Added userId to header:', req.headers['x-user-id']);
   } catch (error) {
-    console.error("Error verifying token:", error);
-    res.writeHead(401, { "Content-Type": "application/json" });
+    console.error("Error verifying token");
+    res.writeHead(401, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ message: "Unauthorized", data: null, status: 401, success: false }));
   }
 }
@@ -43,7 +43,7 @@ const handler = app.getRequestHandler();
 app.prepare().then(() => {
   const httpServer = createServer(async (req, res) => {
     const cookies = parseCookies(req);
-
+    
     if (req.url.startsWith("/api/chat") || req.url.startsWith("/api/users/logout") || req.url.startsWith("/api/users/getUser") || req.url.startsWith("/api/message")) {
       await getUser(req, res, cookies);
     }

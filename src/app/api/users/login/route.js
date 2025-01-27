@@ -13,17 +13,18 @@ export async function POST(req) {
     }
 
     const user = await User.findOne({email});
+    if(!user){
+        return new ApiResponse("User not found", null, false, 404);
+    }
+    if(!user.isVerified){
+        return new ApiResponse("User is not verified", null, false, 400);
+    }
+
     const userWithSameUsername = await User.findOne({username: user.username, email: {$ne: email}});
     if(userWithSameUsername?.isVerified){
         return new ApiResponse("User with same username already exists", null, false, 400);
     }
 
-    if(!user.isVerified){
-        return new ApiResponse("User is not verified", null, false, 400);
-    }
-    if(!user){
-        return new ApiResponse("User not found", null, false, 404);
-    }
 
     const isPasswordCorrect = await user.isPasswordCorrect(password);
     if(!isPasswordCorrect){
@@ -44,7 +45,7 @@ export async function POST(req) {
         secure: process.env.NODE_ENV === 'production',
         path: '/',
         sameSite: 'strict',
-        maxAge: 3 * 24 * 60 * 60 * 1000
+        maxAge: 3 * 24 * 60 * 60 * 1000,
     });
     
     response.cookies.set('refreshToken', refreshToken, {

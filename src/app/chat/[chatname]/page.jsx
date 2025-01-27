@@ -94,6 +94,34 @@ export default function Chat() {
         setMsg("");
     }
 
+    useEffect(() => {
+        async function auth(){
+            const res = await fetch("/api/users/getUser", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+            });
+            const data = await res.json();
+            console.log(data);
+            if(!data.success){
+                const res = await fetch("/api/users/tokenRefresh", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                });
+                const data = await res.json();
+                if(!data.success){
+                    router.push("/login");
+                }
+                console.log(data);
+            }
+        }
+        auth();
+
+    }, [])
+
 	useEffect(() => {
 		async function getUser() {
 			try {
