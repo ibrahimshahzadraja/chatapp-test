@@ -1,9 +1,16 @@
 import ApiResponse from "@/helpers/ApiResponse";
 import { dbConnect } from "@/dbConfig/dbConfig";
 import Chat from "@/models/Chat";
-import mongoose from "mongoose";
+import auth from "@/helpers/auth";
 
 export async function POST(req) {
+
+    const isAuthenticated = await auth(req);
+    const userId = req.userId;
+    if(!isAuthenticated || !userId) {
+        return new ApiResponse("Unauthorized", null, false, 401);
+    }
+
     await dbConnect();
 
     const { chatname, password } = await req.json();
@@ -23,9 +30,6 @@ export async function POST(req) {
     if(!isPasswordCorrect){
         return new ApiResponse("Wrong password", null, false, 400);
     }
-
-    const requestHeaders = new Headers(req.headers);
-    const userId = requestHeaders.get('x-user-id');
 
     if(chat.members.includes(userId) || chat.owner.toString() == userId){
         return new ApiResponse("Already a member", null, false, 400);

@@ -2,12 +2,17 @@ import ApiResponse from "@/helpers/ApiResponse";
 import Chat from "@/models/Chat";
 import { dbConnect } from "@/dbConfig/dbConfig";
 import mongoose from "mongoose";
+import auth from "@/helpers/auth";
 
 export async function GET(req) {
-    await dbConnect();
 
-    const requestHeaders = new Headers(req.headers);
-    const userId = requestHeaders.get('x-user-id');
+  const isAuthenticated = await auth(req);
+  const userId = req.userId;
+  if(!isAuthenticated || !userId) {
+      return new ApiResponse("Unauthorized", null, false, 401);
+  }
+
+    await dbConnect();
 
     const chats = await Chat.aggregate([
         {

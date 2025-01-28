@@ -3,12 +3,17 @@ import { dbConnect } from "@/dbConfig/dbConfig";
 import ApiResponse from "@/helpers/ApiResponse";
 import mongoose from "mongoose";
 import Chat from "@/models/Chat";
+import auth from "@/helpers/auth";
 
 export async function POST(req) {
-    await dbConnect();
 
-    const requestHeaders = new Headers(req.headers);
-    const userId = requestHeaders.get('x-user-id');
+    const isAuthenticated = await auth(req);
+    const userId = req.userId;
+    if(!isAuthenticated || !userId) {
+        return new ApiResponse("Unauthorized", null, false, 401);
+    }
+
+    await dbConnect();
 
     const { text, chatname } = await req.json();
 

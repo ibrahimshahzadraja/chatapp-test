@@ -1,13 +1,18 @@
 import Chat from "@/models/Chat";
 import ApiResponse from "@/helpers/ApiResponse";
 import { dbConnect } from "@/dbConfig/dbConfig";
+import auth from "@/helpers/auth";
 
 export async function POST(req) {
+    
+    const isAuthenticated = await auth(req);
+    const userId = req.userId;
+    if(!isAuthenticated || !userId) {
+        return new ApiResponse("Unauthorized", null, false, 401);
+    }
+
     await dbConnect();
     const {chatname, password} = await req.json();
-
-    const requestHeaders = new Headers(req.headers);
-    const userId = requestHeaders.get('x-user-id');
 
     if(!chatname || !password) {
         return new ApiResponse("Chatname and password are required", null, false, 400);

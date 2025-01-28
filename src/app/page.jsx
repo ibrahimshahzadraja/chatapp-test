@@ -89,6 +89,7 @@ export default function ChatPage() {
             }, 10000);
             socket.emit("joinRoom", data.data);
             setChat("");
+            setPassword("");
         }
     }
 

@@ -3,8 +3,16 @@ import { dbConnect } from "@/dbConfig/dbConfig";
 import Chat from "@/models/Chat";
 import mongoose from "mongoose";
 import Message from "@/models/Message";
+import auth from "@/helpers/auth";
 
 export async function POST(req){
+
+    const isAuthenticated = await auth(req);
+    const userId = req.userId;
+    if(!isAuthenticated || !userId) {
+        return new ApiResponse("Unauthorized", null, false, 401);
+    }
+
     await dbConnect();
 
     const { chatname } = await req.json();
@@ -13,8 +21,6 @@ export async function POST(req){
         return new ApiResponse("Chatname is required", null, false, 400);
     }
 
-    const requestHeaders = new Headers(req.headers);
-    const userId = requestHeaders.get('x-user-id');
     
     const chat = await Chat.findOne({chatname, owner: new mongoose.Types.ObjectId(userId)});
     const messages = await Message.deleteMany({sendTo: chat._id})

@@ -47,7 +47,7 @@ export default function Signup() {
                         <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">Create an account</h1>
                         <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit(onSubmit)} id="signup-form">
                             <div className='text-slate-400 flex flex-col'>
-                                <label className='text-slate-400' htmlFor="avatar">Profile Picture</label>
+                                <label className='block mb-2 text-sm font-medium text-gray-900 dark:text-white' htmlFor="avatar">Profile Picture</label>
                                 <div className="flex items-center justify-center w-full">
                                     <label htmlFor="dropzone-file" className="flex flex-col items-center overflow-hidden justify-center w-32 h-32 border-2 rounded-full cursor-pointer bg-gradient-to-r from-lightGray to-black">
                                         <div className='w-full h-full' style={{backgroundImage : `url(${imageUrl})`, backgroundSize: 'cover'}}>
@@ -84,7 +84,7 @@ export default function Signup() {
                                     <input id="terms" aria-describedby="terms" type="checkbox" className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800" required="" />
                                 </div>
                                 <div className="ml-3 text-sm">
-                                    <label htmlFor="terms" className="font-light text-gray-500 dark:text-gray-300">I accept the <Link className="font-medium text-primary-600 hover:underline dark:text-primary-500" href="#">Terms and Conditions</Link></label>
+                                    <label htmlFor="terms" className="font-light text-gray-500 dark:text-gray-300">I accept the <Link className="font-medium text-primary-600 hover:underline dark:text-primary-500" href="/terms-and-conditions">Terms and Conditions</Link></label>
                                 </div>
                             </div>
                             <button type="submit" className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">Create an account</button>

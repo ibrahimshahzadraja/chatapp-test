@@ -1,8 +1,16 @@
 import ApiResponse from "@/helpers/ApiResponse";
 import { dbConnect } from "@/dbConfig/dbConfig";
 import Chat from "@/models/Chat";
+import auth from "@/helpers/auth";
 
 export async function POST(req) {
+
+    const isAuthenticated = await auth(req);
+    const userId = req.userId;
+    if(!isAuthenticated || !userId) {
+        return new ApiResponse("Unauthorized", null, false, 401);
+    }
+
     await dbConnect();
 
     const { chatname } = await req.json();
@@ -16,9 +24,6 @@ export async function POST(req) {
     if(!chat){
         return new ApiResponse("Chat not found", null, false, 400);
     }
-
-    const requestHeaders = new Headers(req.headers);
-    const userId = requestHeaders.get('x-user-id');
 
     if(!chat.members.includes(userId)){
         return new ApiResponse("You are not the member of this room", null, false, 400);
