@@ -34,16 +34,27 @@ export async function POST(req) {
         return new ApiResponse("No chat found", null, false, 400);
     }
 
-    const username = (await User.findOne({_id: new mongoose.Types.ObjectId(userId)})).username;
-
     const messages = await Message.aggregate([
         {
           $addFields: {
             isSentByMe: {
               $cond: { if: { $eq: ["$sendBy", new mongoose.Types.ObjectId(userId)] }, then: true, else: false }
-            },
-            username,
+            }
           }
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "sendBy",
+            foreignField: "_id",
+            as: "userDetails",
+            pipeline: [
+              { $project: { username: 1, _id: 0 } }
+            ]
+          }
+        },
+        {
+          $unwind: "$userDetails"
         },
         {
           $match: {
@@ -54,7 +65,7 @@ export async function POST(req) {
           $project: {
             text: 1,
             isSentByMe: 1,
-            username: 1,
+            username: "$userDetails.username",
             createdAt: 1
           }
         }
