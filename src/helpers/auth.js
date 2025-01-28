@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 
 async function getUser(req) {
     const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken').value;
+    const accessToken = cookieStore.get('accessToken')?.value;
 
   if (!accessToken) {
     return false;
