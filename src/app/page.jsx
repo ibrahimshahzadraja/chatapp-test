@@ -131,7 +131,7 @@ export default function ChatPage() {
                             <div key={index} className='cursor-pointer border-2 border-black m-1 p-1 w-[250px] h-20' >
                                 <Link href={`/chat/${r.chatname}`}>
                                     <div className='flex h-full'>
-                                        <img src={r.profilePicture} alt="image" className='h-full rounded-full' />
+                                        <img src={r.profilePicture} alt="image" className='h-full w-20 rounded-full' />
                                         <div className='ml-2'>
                                             <p>{r.chatname}</p>
                                             <p>{r.sendByUsername ? `${r.sendByUsername}:` : ""}{r.messageText ? r.messageText : "image"}</p>

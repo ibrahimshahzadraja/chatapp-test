@@ -17,8 +17,6 @@ export async function POST(req) {
     const password = formData.get('password');
     const profilePicture = formData.get('profilePicture');
 
-    console.log(chatname, password, profilePicture);
-
     if(!chatname || !password) {
         return new ApiResponse("Chatname and password are required", null, false, 400);
     }

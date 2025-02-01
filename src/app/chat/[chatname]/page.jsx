@@ -15,6 +15,7 @@ export default function Chat() {
 	const [image, setImage] = useState(null);
 
 	const imageInputRef = useRef(null);
+	const profileInputRef = useRef(null);
 
     async function leaveChat() {
 		const response = await fetch("/api/chat/leave", {
@@ -127,9 +128,30 @@ export default function Chat() {
 
 		if (imageInputRef.current) {
 			imageInputRef.current.value = null;
-		  }
+		}
 
         console.log(data)
+	}
+
+	async function changeProfilePicture(e) {
+		const file = e.target.files[0];
+
+		const formData = new FormData()
+		formData.append('profilePicture', file);
+		formData.append('chatname', chatname);
+
+        const response = await fetch("/api/chat/changeProfilePicture", {
+            method: 'POST',
+            body: formData,
+        });
+    
+        const data = await response.json();
+
+		console.log(data);
+
+		if (profileInputRef.current) {
+			profileInputRef.current.value = null;
+		}
 	}
 
     useEffect(() => {
@@ -244,7 +266,10 @@ export default function Chat() {
 
 	return (
 		<>
-		  <div>Chat</div>
+		  <div>
+			<span>Chat</span>
+		  </div>
+			{isOwner && <input type="file" accept='image/*' placeholder='Profile Picture' onChange={changeProfilePicture} ref={profileInputRef} />}
 			{messages.map((message, index) => (
 				<div key={index} className={message.isSentByMe ? 'bg-green-400 text-white' : 'bg-gray-700 text-white'}>
 					{message.image && <img src={message.image} alt='image' className="w-[350px] h-[200px]" />}
