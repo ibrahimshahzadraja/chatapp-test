@@ -247,7 +247,7 @@ export default function Chat() {
 		  <div>Chat</div>
 			{messages.map((message, index) => (
 				<div key={index} className={message.isSentByMe ? 'bg-green-400 text-white' : 'bg-gray-700 text-white'}>
-					{message.image && <img src={message.image} className="w-[350px] h-[200px]" />}
+					{message.image && <img src={message.image} alt='image' className="w-[350px] h-[200px]" />}
 					{message.text && <p>{message.username}:{message.text}/{message.createdAt}</p>}
 				</div>
 			))}
