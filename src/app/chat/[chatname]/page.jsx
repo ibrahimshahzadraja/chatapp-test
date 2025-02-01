@@ -16,6 +16,7 @@ export default function Chat() {
 
 	const imageInputRef = useRef(null);
 	const profileInputRef = useRef(null);
+	const scrollRef = useRef(null);
 
     async function leaveChat() {
 		const response = await fetch("/api/chat/leave", {
@@ -258,6 +259,12 @@ export default function Chat() {
         };
     }, []);
 
+	useEffect(() => {
+		if (scrollRef.current) {
+			scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+		  }
+	})
+
     if(!isMember && !isOwner){
         return(
             <div>Loading...</div>
@@ -270,12 +277,18 @@ export default function Chat() {
 			<span>Chat</span>
 		  </div>
 			{isOwner && <input type="file" accept='image/*' placeholder='Profile Picture' onChange={changeProfilePicture} ref={profileInputRef} />}
-			{messages.map((message, index) => (
-				<div key={index} className={message.isSentByMe ? 'bg-green-400 text-white' : 'bg-gray-700 text-white'}>
-					{message.image && <img src={message.image} alt='image' className="w-[350px] h-[200px]" />}
-					{message.text && <p>{message.username}:{message.text}/{message.createdAt}</p>}
-				</div>
-			))}
+			<div className='w-full h-[70vh] bg-gray-200 overflow-y-auto' ref={scrollRef}>
+				{messages.map((message, index) => (
+					<div key={index} className={`${message.isSentByMe ? 'bg-green-400 text-white' : 'bg-gray-700 text-white'} min-w-28 w-fit max-w-[45%] ${message.isSentByMe ? 'ml-auto' : 'mr-auto'} rounded-md py-2 px-3 my-2 mx-2 relative`}>
+						{message.image && <img src={message.image} alt='image' className="w-[350px] h-[200px]" />}
+						{message.text && <div>
+											<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
+											<div className='sm:my-4 my-3 sm:text-lg text-base font-sans sm:font-medium break-words'>{message.text}</div>
+											<div className='text-xs absolute bottom-0 right-0 m-1'>{new Date(message.createdAt).toLocaleTimeString('en-US', {hour: 'numeric',minute: 'numeric',hour12: true})}</div>
+										</div>}
+					</div>
+				))}
+			</div>
 		    <div>
                 <input type="text" placeholder="Enter message" className="border-2 border-black" value={msg} onChange={(e) => setMsg(e.target.value)} />
                 <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={sendMessage}>Send</button>
