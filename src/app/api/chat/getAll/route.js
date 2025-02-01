@@ -15,39 +15,61 @@ export async function GET(req) {
     await dbConnect();
 
     const chats = await Chat.aggregate([
-        {
-            $match: {
-              $or: [
-                { members: new mongoose.Types.ObjectId(userId) },
-                { owner: new mongoose.Types.ObjectId(userId) }
-              ]
-            }
+      {
+        $match: {
+          $or: [
+            { members: new mongoose.Types.ObjectId(userId) },
+            { owner: new mongoose.Types.ObjectId(userId) }
+          ]
+        }
+      },
+      {
+        $lookup: {
+          from: "messages",
+          let: { chatId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$sendTo", "$$chatId"] } } },
+            { $sort: { createdAt: -1 } },
+            { $limit: 1 }
+          ],
+          as: "messages"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          let: { sendById: { $arrayElemAt: ["$messages.sendBy", 0] } },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$sendById"] } } },
+            { $project: { username: 1 } }
+          ],
+          as: "sendByUser"
+        }
+      },
+      {
+        $project: {
+          chatname: 1,
+          profilePicture: 1,
+          messageText: {
+            $ifNull: [
+              { $arrayElemAt: ["$messages.text", 0] },
+              ""
+            ]
           },
-          {
-            $project: {
-              chatname: 1,
-              _id: 0
-            }
+          sendByUsername: {
+            $ifNull: [
+              { $arrayElemAt: ["$sendByUser.username", 0] },
+              ""
+            ]
           },
-          {
-            $group: {
-              _id: null,
-              chatnames: { $push: "$chatname" }
-            }
-          },
-          {
-            $project: {
-              _id: 0,
-              chatnames: 1
-            }
-          }
-        ])
+          _id: 0
+        }
+      }
+    ])
 
     if(!chats){
         return new ApiResponse("No chat found", null, false, 400)
     }
 
-    const chatnamesArray = chats.length > 0 ? chats[0].chatnames : [];
-
-    return new ApiResponse("Chats found", chatnamesArray, true, 200);
+    return new ApiResponse("Chats found", chats, true, 200);
 }

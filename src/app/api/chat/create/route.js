@@ -12,7 +12,12 @@ export async function POST(req) {
     }
 
     await dbConnect();
-    const {chatname, password} = await req.json();
+    const formData = await req.formData();
+    const chatname = formData.get('chatname');
+    const password = formData.get('password');
+    const profilePicture = formData.get('profilePicture');
+
+    console.log(chatname, password, profilePicture);
 
     if(!chatname || !password) {
         return new ApiResponse("Chatname and password are required", null, false, 400);
@@ -24,10 +29,20 @@ export async function POST(req) {
         return new ApiResponse("Chatname already exists", null, false, 400);
     }
 
+    let url = "/images/default-icon.jpeg";
+    if(profilePicture){
+        url = await uploadOnCloudinary(profilePicture);
+
+        if(!url) {
+            return new ApiResponse("Error uploading image", null, false, 500);
+        }
+    }
+
     const newChat = new Chat({
         owner: userId,
         chatname,
-        password
+        password,
+        profilePicture: url,
     });
 
     await newChat.save();

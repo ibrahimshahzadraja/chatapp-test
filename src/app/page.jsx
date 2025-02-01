@@ -2,14 +2,51 @@
 import { useEffect, useState } from 'react';
 import { socket } from '../socket';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function ChatPage() {
     const [isConnected, setIsConnected] = useState(false);
     const [transport, setTransport] = useState("N/A");
     const [chat, setChat] = useState("");
     const [password, setPassword] = useState("");
+    const [rooms, setRooms] = useState([]);
 
     const router = useRouter();
+
+    async function createRoom(){
+        const formData = new FormData(document.getElementById('create-room-form'));
+
+        const res = await fetch("/api/chat/create", {
+            method: "POST",
+            body: formData
+        });
+        const data = await res.json();
+        console.log(data);
+        if(data.success){
+            document.getElementById("in").textContent = "Room created: " + data.data;
+            setTimeout(() => {
+                document.getElementById("in").textContent = "";
+            }, 10000);
+            socket.emit("joinRoom", data.data);
+            setChat("");
+            setPassword("");
+        }
+    }
+
+    async function getRooms() {
+        const res = await fetch("/api/chat/getAll", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+        const data = await res.json();
+        console.log(data);
+        if(data.success){
+            setRooms(data.data);
+        }
+    }
+
 
     useEffect(() => {
         async function auth(){
@@ -20,7 +57,6 @@ export default function ChatPage() {
                 },
             });
             const data = await res.json();
-            console.log(data);
             if(!data.success){
                 const res = await fetch("/api/users/tokenRefresh", {
                     method: "GET",
@@ -31,11 +67,16 @@ export default function ChatPage() {
                 const data = await res.json();
                 if(!data.success){
                     router.push("/login");
+                    return false;
                 }
-                console.log(data);
             }
+            return true;
         }
-        auth();
+        auth().then((val) => {
+            if(val){
+                getRooms();
+            }
+        });
 
     }, [])
 
@@ -69,30 +110,6 @@ export default function ChatPage() {
         };
     }, []);
 
-    async function createRoom(){
-        const res = await fetch("/api/chat/create", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                chatname: chat,
-                password
-            })
-        });
-        const data = await res.json();
-        console.log(data);
-        if(data.success){
-            document.getElementById("in").textContent = "Room created: " + data.data;
-            setTimeout(() => {
-                document.getElementById("in").textContent = "";
-            }, 10000);
-            socket.emit("joinRoom", data.data);
-            setChat("");
-            setPassword("");
-        }
-    }
-
     return (
         <>
             <div>
@@ -100,12 +117,31 @@ export default function ChatPage() {
                 <p>Transport: { transport }</p>
             </div>
             <div>
-                <input type="text" placeholder="Enter room name" className="border-2 border-black" value={chat} onChange={(e) => setChat(e.target.value)} />
-                <br />
-                <input type="text" placeholder="Enter room password" className="border-2 border-black" value={password} onChange={(e) => setPassword(e.target.value)} />
-                <br />
-                <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={createRoom}>Create Room</button>
+                <form id='create-room-form'>
+                    <input type="text" id='chatname' name='chatname' placeholder="Enter room name" className="border-2 border-black" value={chat} onChange={(e) => setChat(e.target.value)} />
+                    <br />
+                    <input type="text" id='password' name='password' placeholder="Enter room password" className="border-2 border-black" value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <br />
+                    <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={createRoom}>Create Room</button>
+                </form>
                 <p id='in'></p>
+                {
+                    rooms.map((r, index) => {
+                        return(
+                            <div key={index} className='cursor-pointer border-2 border-black m-1 p-1 w-1/4 h-20' >
+                                <Link href={`/chat/${r.chatname}`}>
+                                    <div className='flex h-full'>
+                                        <img src={r.profilePicture} alt="" className='h-full rounded-full' />
+                                        <div>
+                                            <p>{r.chatname}</p>
+                                            <p>{r.sendByUsername ? `${r.sendByUsername}:` : ""}{r.messageText}</p>
+                                        </div>
+                                    </div>
+                                </Link>
+                            </div>
+                        )
+                    })
+                }
             </div>
         </>
     );

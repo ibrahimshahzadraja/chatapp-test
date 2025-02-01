@@ -20,7 +20,11 @@ const chatSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         default: []
-    }]
+    }],
+    profilePicture: {
+        type: String,
+        default: "/images/default-icon.webp"
+    }
 }, { timestamps: true });
 
 chatSchema.pre("save", async function (next) {

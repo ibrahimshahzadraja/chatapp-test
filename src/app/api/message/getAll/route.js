@@ -64,6 +64,7 @@ export async function POST(req) {
         {
           $project: {
             text: 1,
+            image: 1,
             isSentByMe: 1,
             username: "$userDetails.username",
             createdAt: 1
