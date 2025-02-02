@@ -134,7 +134,7 @@ export default function ChatPage() {
                                         <img src={r.profilePicture} alt="image" className='h-full w-20 rounded-full' />
                                         <div className='ml-2'>
                                             <p>{r.chatname}</p>
-                                            <p>{r.sendByUsername ? `${r.sendByUsername}:` : ""}{r.messageText ? r.messageText : "image"}</p>
+                                            <p>{r.sendByUsername ? `${r.sendByUsername}:` : ""}{r.messageText ? r.messageText : r.sendByUsername ? "image" : ""}</p>
                                         </div>
                                     </div>
                                 </Link>

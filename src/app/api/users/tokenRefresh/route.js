@@ -21,7 +21,7 @@ export async function GET(req){
     }
     const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id)
 
-    const response = new ApiResponse("Token refreshed successfully", null, true, 200);
+    const response = new ApiResponse("Token refreshed successfully", user, true, 200);
     response.cookies.set('accessToken', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

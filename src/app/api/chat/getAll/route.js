@@ -28,7 +28,16 @@ export async function GET(req) {
           from: "messages",
           let: { chatId: "$_id" },
           pipeline: [
-            { $match: { $expr: { $eq: ["$sendTo", "$$chatId"] } } },
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$sendTo", "$$chatId"] },
+                    { $eq: ["$isSystemMessage", false] }
+                  ]
+                }
+              }
+            },
             { $sort: { createdAt: -1 } },
             { $limit: 1 }
           ],

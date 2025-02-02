@@ -3,16 +3,20 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { socket } from '@/socket';
 
+let typingTimeout;
+
 export default function Chat() {
     const { chatname } = useParams();
     const router = useRouter();
 
     const [isMember, setIsMember] = useState(false);
 	const [isOwner, setIsOwner] = useState(false);
+	const [isTyping, setIsTyping] = useState(false);
 	const [messages, setMessages] = useState([]);
     const [msg, setMsg] = useState("");
 	const [userDetails, setUserDetails] = useState({});
 	const [image, setImage] = useState(null);
+	const [addUser, setAddUser] = useState("");
 
 	const imageInputRef = useRef(null);
 	const profileInputRef = useRef(null);
@@ -30,7 +34,8 @@ export default function Chat() {
 		  console.log(data)
 
 		  if(data.success){
-			socket.emit("leaveRoom", chatname)
+			socket.emit("leaveRoom", {chatname, username: userDetails.username});
+			await sendSystemMessage(`${userDetails.username} left the chat`);
 			router.push("/");
 		  }
     }
@@ -85,7 +90,7 @@ export default function Chat() {
     async function sendMessage() {
         console.log('Sending message:', msg);
         socket.emit("sendMessage", { chatname, username: userDetails.username ,message: msg });
-		setMessages(m => [...m, {text: msg, image: "", username: userDetails.username, isSentByMe: true, createdAt: new Date().toISOString()}])
+		setMessages(m => [...m, {text: msg, image: "", isSystemMessage: false, username: userDetails.username, isSentByMe: true, createdAt: new Date().toISOString()}])
         
         const res = await fetch("/api/message/send", {
             method: "POST",
@@ -109,7 +114,7 @@ export default function Chat() {
 		  const base64Image = reader.result;
 		  setImage(base64Image);
 		  socket.emit('sendImage', {chatname, username: userDetails.username, image: base64Image});
-		  setMessages(m => [...m, {text: "", image: base64Image, username: userDetails.username, isSentByMe: true, createdAt: new Date().toISOString()}])
+		  setMessages(m => [...m, {text: "", image: base64Image, isSystemMessage: false, username: userDetails.username, isSentByMe: true, createdAt: new Date().toISOString()}])
 		};
 	
 		if (file) {
@@ -153,6 +158,36 @@ export default function Chat() {
 		if (profileInputRef.current) {
 			profileInputRef.current.value = null;
 		}
+	}
+
+	async function adduser() {
+		const response = await fetch("/api/chat/addUser", {
+			method: 'POST',
+			headers: {
+			  'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({chatname, username: addUser}),
+		});
+
+		const data = await response.json();
+
+		if(data.success){
+			socket.emit("userJoined", {chatname, username: addUser});
+			await sendSystemMessage(`${addUser} joined the chat`);
+			setAddUser("");
+		}
+	}
+
+	async function sendSystemMessage(text) {
+		const response = await fetch("/api/message/systemMessage", {
+			method: 'POST',
+			headers: {
+			  'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({chatname, text}),
+		});
+
+		const data = await response.json();
 	}
 
     useEffect(() => {
@@ -240,6 +275,14 @@ export default function Chat() {
     useEffect(() => {
 		socket.emit("joinRoom", chatname);
 
+		socket.on("userJoin", (username) => {
+			setMessages(m => [...m, {text: `${username} joined the chat`, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+		});
+
+		socket.on("userLeft", (username) => {
+			setMessages(m => [...m, {text: `${username} left the chat`, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+		});
+
         socket.on("message", (username, message) => {
             console.log('Received message:', message);
             setMessages(m => [...m, {text: message, image: "", username, isSentByMe: false, createdAt: new Date().toISOString()}]);
@@ -254,6 +297,13 @@ export default function Chat() {
 			router.push("/");
 		})
 
+		socket.on('user-typing', () => {
+			setIsTyping(true);
+		});
+		  socket.on('user-stopped-typing', () => {
+			setIsTyping(false);
+		});
+
         return () => {
             socket.off("message");
         };
@@ -265,6 +315,16 @@ export default function Chat() {
 		  }
 	})
 
+	const handleTyping = () => {
+		socket.emit('user-typing', chatname);
+	
+		clearTimeout(typingTimeout);
+	
+		typingTimeout = setTimeout(() => {
+		  socket.emit('user-stopped-typing', chatname);
+		}, 1000);
+	  };
+
     if(!isMember && !isOwner){
         return(
             <div>Loading...</div>
@@ -274,23 +334,30 @@ export default function Chat() {
 	return (
 		<>
 		  <div>
-			<span>Chat</span>
+			<h1 className='text-xl font-semibold'>{chatname}</h1>
 		  </div>
 			{isOwner && <input type="file" accept='image/*' placeholder='Profile Picture' onChange={changeProfilePicture} ref={profileInputRef} />}
+			{isOwner && <div className='my-2'>
+				<label>Add User:</label>
+				<input value={addUser} onChange={(e) => setAddUser(e.target.value)} type="text" placeholder='Enter username' className='border-2 border-black' />
+				<button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={adduser}>Add</button>
+			</div>}
 			<div className='w-full h-[70vh] bg-gray-200 overflow-y-auto' ref={scrollRef}>
 				{messages.map((message, index) => (
-					<div key={index} className={`${message.isSentByMe ? 'bg-green-400 text-white' : 'bg-gray-700 text-white'} min-w-28 w-fit max-w-[45%] ${message.isSentByMe ? 'ml-auto' : 'mr-auto'} rounded-md py-2 px-3 my-2 mx-2 relative`}>
+					<div key={index} className={`${message.isSystemMessage ? 'bg-gray-900' : message.isSentByMe ? "bg-green-400" : "bg-gray-700"} text-white min-w-28 w-fit max-w-[45%] ${message.isSystemMessage ? 'mx-auto' : message.isSentByMe ? "ml-auto" : "mr-auto"} rounded-md py-2 px-3 my-2 mx-2 relative`}>
 						{message.image && <img src={message.image} alt='image' className="w-[350px] h-[200px]" />}
-						{message.text && <div>
+						{message.text && !message.isSystemMessage && <div>
 											<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
 											<div className='sm:my-4 my-3 sm:text-lg text-base font-sans sm:font-medium break-words'>{message.text}</div>
 											<div className='text-xs absolute bottom-0 right-0 m-1'>{new Date(message.createdAt).toLocaleTimeString('en-US', {hour: 'numeric',minute: 'numeric',hour12: true})}</div>
 										</div>}
+						{message.isSystemMessage && <div className='text-gray-300 text-sm'>{message.text}</div> }
 					</div>
 				))}
+				{isTyping && <p className='bg-gray-900 text-gray-300 px-3 py-2 my-2 mx-2 rounded-md w-fit'>User is typing...</p>}
 			</div>
 		    <div>
-                <input type="text" placeholder="Enter message" className="border-2 border-black" value={msg} onChange={(e) => setMsg(e.target.value)} />
+                <input type="text" placeholder="Enter message" onKeyDown={handleTyping} className="border-2 border-black" value={msg} onChange={(e) => setMsg(e.target.value)} />
                 <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={sendMessage}>Send</button>
 				<input type="file" accept="image/*" onChange={sendImage} ref={imageInputRef} />
             </div>

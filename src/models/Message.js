@@ -9,6 +9,10 @@ const messageSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    isSystemMessage: {
+        type: Boolean,
+        default: false
+    },
     sendTo: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Chat",

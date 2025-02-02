@@ -2,11 +2,13 @@
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { socket } from '@/socket';
 
 export default function Chat() {
 
   const { chatname } = useParams();
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
 
   const router = useRouter();
 
@@ -30,13 +32,29 @@ export default function Chat() {
                 const data = await res.json();
                 if(!data.success){
                     router.push("/login");
+                } else{
+                    setUsername(data.data.username);
                 }
                 console.log(data);
+            } else{
+                setUsername(data.data.username);
             }
         }
         auth();
 
     }, []);
+
+    async function sendSystemMessage(text) {
+      const response = await fetch("/api/message/systemMessage", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({chatname, text}),
+      });
+  
+      const data = await response.json();
+    }
 
   const joinRoom = async () => {
     const response = await fetch("/api/chat/join", {
@@ -49,7 +67,8 @@ export default function Chat() {
     const data = await response.json();
     
     if(data.success){
-      console.log("You joined the room")
+        socket.emit("userJoined", {chatname, username});
+        await sendSystemMessage(`${username} joined the chat`);
       router.push(`/chat/${chatname}`);
     } else{
       console.log(data.message)
