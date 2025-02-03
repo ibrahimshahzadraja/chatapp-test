@@ -13,6 +13,7 @@ export default function Chat() {
 	const [isOwner, setIsOwner] = useState(false);
 	const [isTyping, setIsTyping] = useState(false);
 	const [messages, setMessages] = useState([]);
+	const [chatDetails, setChatDetails] = useState({});
     const [msg, setMsg] = useState("");
 	const [userDetails, setUserDetails] = useState({});
 	const [image, setImage] = useState(null);
@@ -21,6 +22,7 @@ export default function Chat() {
 	const imageInputRef = useRef(null);
 	const profileInputRef = useRef(null);
 	const scrollRef = useRef(null);
+	const backgroundImageRef = useRef(null);
 
     async function leaveChat() {
 		const response = await fetch("/api/chat/leave", {
@@ -86,8 +88,30 @@ export default function Chat() {
 			router.push("/");
 		}
 	}
+	async function getChatDetails() {
+		try {
+			const response = await fetch("/api/chat/get", {
+				method: 'POST',
+				headers: {
+				  'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({chatname}),
+			});
+			const data = await response.json();
+
+			console.log(data.data[0]);
+
+			if(data.success){
+				setChatDetails(data.data[0]);
+			}
+		} catch (error) {
+			console.log(error);
+			router.push("/");
+		}
+	}
 
     async function sendMessage() {
+		if(!msg) return;
         console.log('Sending message:', msg);
         socket.emit("sendMessage", { chatname, username: userDetails.username ,message: msg });
 		setMessages(m => [...m, {text: msg, image: "", isSystemMessage: false, username: userDetails.username, isSentByMe: true, createdAt: new Date().toISOString()}])
@@ -153,7 +177,10 @@ export default function Chat() {
     
         const data = await response.json();
 
-		console.log(data);
+		if(data.success){
+			socket.emit("profilePictureChanged", {chatname, profilePicture: data.data});
+			setChatDetails({...chatDetails, profilePicture: data.data});
+		}
 
 		if (profileInputRef.current) {
 			profileInputRef.current.value = null;
@@ -173,7 +200,7 @@ export default function Chat() {
 
 		if(data.success){
 			socket.emit("userJoined", {chatname, username: addUser});
-			await sendSystemMessage(`${addUser} joined the chat`);
+			await sendSystemMessage(`Admin added ${addUser}`);
 			setAddUser("");
 		}
 	}
@@ -188,6 +215,30 @@ export default function Chat() {
 		});
 
 		const data = await response.json();
+	}
+
+	async function setBackgroundImage(e) {
+		const file = e.target.files[0];
+
+		const formData = new FormData()
+		formData.append('backgroundImage', file);
+		formData.append('chatname', chatname);
+
+        const response = await fetch("/api/chat/changeBackgroundImage", {
+            method: 'POST',
+            body: formData,
+        });
+    
+        const data = await response.json();
+
+		if(data.success){
+			socket.emit("backgroundImageChanged", {chatname, backgroundImage: data.data});
+			setChatDetails({...chatDetails, backgroundImage: data.data});
+		}
+
+		if (backgroundImageRef.current) {
+			backgroundImageRef.current.value = null;
+		}
 	}
 
     useEffect(() => {
@@ -270,6 +321,7 @@ export default function Chat() {
 
 	useEffect(() => {
 		getMessages();
+		getChatDetails();
 	}, [])
 
     useEffect(() => {
@@ -300,9 +352,15 @@ export default function Chat() {
 		socket.on('user-typing', () => {
 			setIsTyping(true);
 		});
-		  socket.on('user-stopped-typing', () => {
+		socket.on('user-stopped-typing', () => {
 			setIsTyping(false);
 		});
+		socket.on("profilePictureChanged", (profilePicture) => {
+			setChatDetails(cd => ({...cd, profilePicture}));
+		})
+		socket.on("backgroundImageChanged", (backgroundImage) => {
+			setChatDetails(cd => ({...cd, backgroundImage}));
+		})
 
         return () => {
             socket.off("message");
@@ -333,7 +391,8 @@ export default function Chat() {
 
 	return (
 		<>
-		  <div>
+		  <div className='flex items-center'>
+			<img src={chatDetails.profilePicture} alt="Chat Profile" className='w-20 h-20 rounded-full border-2 border-black' />
 			<h1 className='text-xl font-semibold'>{chatname}</h1>
 		  </div>
 			{isOwner && <input type="file" accept='image/*' placeholder='Profile Picture' onChange={changeProfilePicture} ref={profileInputRef} />}
@@ -342,7 +401,11 @@ export default function Chat() {
 				<input value={addUser} onChange={(e) => setAddUser(e.target.value)} type="text" placeholder='Enter username' className='border-2 border-black' />
 				<button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={adduser}>Add</button>
 			</div>}
-			<div className='w-full h-[70vh] bg-gray-200 overflow-y-auto' ref={scrollRef}>
+			{isOwner && <div>
+				<label>Background Image:</label>
+				<input type="file" accept='image/*' onChange={setBackgroundImage} ref={backgroundImageRef} />	
+			</div> }
+			<div className={`w-full h-[70vh] bg-gray-200 overflow-y-auto bg-cover bg-center`} style={{backgroundImage: chatDetails.backgroundImage ? `url(${chatDetails.backgroundImage})` : 'none',}} ref={scrollRef}>
 				{messages.map((message, index) => (
 					<div key={index} className={`${message.isSystemMessage ? 'bg-gray-900' : message.isSentByMe ? "bg-green-400" : "bg-gray-700"} text-white min-w-28 w-fit max-w-[45%] ${message.isSystemMessage ? 'mx-auto' : message.isSentByMe ? "ml-auto" : "mr-auto"} rounded-md py-2 px-3 my-2 mx-2 relative`}>
 						{message.image && <img src={message.image} alt='image' className="w-[350px] h-[200px]" />}

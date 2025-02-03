@@ -24,6 +24,10 @@ const chatSchema = new mongoose.Schema({
     profilePicture: {
         type: String,
         default: "/images/default-icon.webp"
+    },
+    backgroundImage: {
+        type: String,
+        default: ""
     }
 }, { timestamps: true });
 
