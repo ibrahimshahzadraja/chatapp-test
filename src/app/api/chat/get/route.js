@@ -21,38 +21,46 @@ export async function POST(req) {
     }
 
     const chat = await Chat.aggregate([
-        {
-          $match: {
-            chatname: chatname
-          }
-        },
-        {
-          $lookup: {
-            from: "users",
-            localField: "owner",
-            foreignField: "_id",
-            as: "ownerDetails"
-          }
-        },
-        {
-          $lookup: {
-            from: "users",
-            localField: "members",
-            foreignField: "_id",
-            as: "memberDetails"
-          }
-        },
-        {
-          $project: {
-            chatname: 1,
-            profilePicture: 1,
-            backgroundImage: 1,
-            "ownerUsername": { $arrayElemAt: ["$ownerDetails.username", 0] },
-            "memberUsernames": "$memberDetails.username"
-          }
+      {
+        $match: {
+          chatname: chatname
         }
-      ]
-      );
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "owner",
+          foreignField: "_id",
+          as: "ownerDetails"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "members",
+          foreignField: "_id",
+          as: "memberDetails"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "banned",
+          foreignField: "_id",
+          as: "bannedDetails"
+        }
+      },
+      {
+        $project: {
+          chatname: 1,
+          profilePicture: 1,
+          backgroundImage: 1,
+          "ownerUsername": { $arrayElemAt: ["$ownerDetails.username", 0] },
+          "memberUsernames": "$memberDetails.username",
+          "bannedUsernames": "$bannedDetails.username"
+        }
+      }
+    ]);
 
     if(!chat){
         return new ApiResponse("Chat not found", null, false, 400);

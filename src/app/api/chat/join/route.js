@@ -2,6 +2,7 @@ import ApiResponse from "@/helpers/ApiResponse";
 import { dbConnect } from "@/dbConfig/dbConfig";
 import Chat from "@/models/Chat";
 import auth from "@/helpers/auth";
+import mongoose from "mongoose";
 
 export async function POST(req) {
 
@@ -33,6 +34,10 @@ export async function POST(req) {
 
     if(chat.members.includes(userId) || chat.owner.toString() == userId){
         return new ApiResponse("Already a member", null, false, 400);
+    }
+    
+    if(chat.banned.includes(new mongoose.Types.ObjectId(user._id))){
+        return new ApiResponse("User is banned", null, false, 400);
     }
 
     chat.members.push(userId);

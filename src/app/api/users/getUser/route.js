@@ -15,11 +15,11 @@ export async function GET(req){
     
     await dbConnect();
 
-    const user = await User.findOne({_id: new mongoose.Types.ObjectId(req.userId)}).select("-password -refreshToken");
+    const user = await User.findOne({_id: new mongoose.Types.ObjectId(userId)});
 
     if(!user){
         return new ApiResponse("User not found", null, false, 400)
     }
 
-    return new ApiResponse("User found", user, true, 200);
+    return new ApiResponse("User found", user.username, true, 200);
 }

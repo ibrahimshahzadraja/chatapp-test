@@ -17,9 +17,16 @@ export async function GET(req) {
     const chats = await Chat.aggregate([
       {
         $match: {
-          $or: [
-            { members: new mongoose.Types.ObjectId(userId) },
-            { owner: new mongoose.Types.ObjectId(userId) }
+          $and: [
+            {
+              $or: [
+                { members: new mongoose.Types.ObjectId(userId) },
+                { owner: new mongoose.Types.ObjectId(userId) }
+              ]
+            },
+            {
+              banned: { $nin: [new mongoose.Types.ObjectId(userId)] }
+            }
           ]
         }
       },
@@ -74,7 +81,7 @@ export async function GET(req) {
           _id: 0
         }
       }
-    ])
+    ]);
 
     if(!chats){
         return new ApiResponse("No chat found", null, false, 400)

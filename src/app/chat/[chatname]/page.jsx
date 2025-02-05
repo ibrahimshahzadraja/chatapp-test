@@ -2,6 +2,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { socket } from '@/socket';
+import AdminBoard from '@/app/components/AdminBoard';
 
 let typingTimeout;
 
@@ -15,7 +16,7 @@ export default function Chat() {
 	const [messages, setMessages] = useState([]);
 	const [chatDetails, setChatDetails] = useState({});
     const [msg, setMsg] = useState("");
-	const [userDetails, setUserDetails] = useState({});
+	const [userName, setUserName] = useState("");
 	const [image, setImage] = useState(null);
 	const [addUser, setAddUser] = useState("");
 
@@ -36,8 +37,8 @@ export default function Chat() {
 		  console.log(data)
 
 		  if(data.success){
-			socket.emit("leaveRoom", {chatname, username: userDetails.username});
-			await sendSystemMessage(`${userDetails.username} left the chat`);
+			socket.emit("leaveRoom", {chatname, username: userName});
+			await sendSystemMessage(`${userName} left the chat`);
 			router.push("/");
 		  }
     }
@@ -88,6 +89,7 @@ export default function Chat() {
 			router.push("/");
 		}
 	}
+
 	async function getChatDetails() {
 		try {
 			const response = await fetch("/api/chat/get", {
@@ -113,8 +115,8 @@ export default function Chat() {
     async function sendMessage() {
 		if(!msg) return;
         console.log('Sending message:', msg);
-        socket.emit("sendMessage", { chatname, username: userDetails.username ,message: msg });
-		setMessages(m => [...m, {text: msg, image: "", isSystemMessage: false, username: userDetails.username, isSentByMe: true, createdAt: new Date().toISOString()}])
+        socket.emit("sendMessage", { chatname, username: userName ,message: msg });
+		setMessages(m => [...m, {text: msg, image: "", isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
         
         const res = await fetch("/api/message/send", {
             method: "POST",
@@ -137,8 +139,8 @@ export default function Chat() {
 		reader.onloadend = () => {
 		  const base64Image = reader.result;
 		  setImage(base64Image);
-		  socket.emit('sendImage', {chatname, username: userDetails.username, image: base64Image});
-		  setMessages(m => [...m, {text: "", image: base64Image, isSystemMessage: false, username: userDetails.username, isSentByMe: true, createdAt: new Date().toISOString()}])
+		  socket.emit('sendImage', {chatname, username: userName, image: base64Image});
+		  setMessages(m => [...m, {text: "", image: base64Image, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
 		};
 	
 		if (file) {
@@ -198,9 +200,12 @@ export default function Chat() {
 
 		const data = await response.json();
 
+		console.log(data);
+
 		if(data.success){
 			socket.emit("userJoined", {chatname, username: addUser});
 			await sendSystemMessage(`Admin added ${addUser}`);
+			setChatDetails(cd => ({...cd, memberUsernames: [...cd.memberUsernames, addUser]}));			  
 			setAddUser("");
 		}
 	}
@@ -282,7 +287,8 @@ export default function Chat() {
 					const data = await response.json();
 
 					if(data.success){
-						setUserDetails(data.data);
+						console.log(data.data);
+						setUserName(data.data);
 					}
 			}
 			catch (error) {
@@ -325,47 +331,69 @@ export default function Chat() {
 	}, [])
 
     useEffect(() => {
-		socket.emit("joinRoom", chatname);
-
-		socket.on("userJoin", (username) => {
-			setMessages(m => [...m, {text: `${username} joined the chat`, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
-		});
-
-		socket.on("userLeft", (username) => {
-			setMessages(m => [...m, {text: `${username} left the chat`, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
-		});
-
-        socket.on("message", (username, message) => {
-            console.log('Received message:', message);
-            setMessages(m => [...m, {text: message, image: "", username, isSentByMe: false, createdAt: new Date().toISOString()}]);
-        });
-		
-		socket.on('receiveImage', (username, image) => {
-			setMessages(m => [...m, {text: "", image: image, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
-		  });
-
-		socket.on("roomDeleted", (message) => {
-			console.log(message);
-			router.push("/");
-		})
-
-		socket.on('user-typing', () => {
-			setIsTyping(true);
-		});
-		socket.on('user-stopped-typing', () => {
-			setIsTyping(false);
-		});
-		socket.on("profilePictureChanged", (profilePicture) => {
-			setChatDetails(cd => ({...cd, profilePicture}));
-		})
-		socket.on("backgroundImageChanged", (backgroundImage) => {
-			setChatDetails(cd => ({...cd, backgroundImage}));
-		})
+		if(userName){
+			socket.emit("joinRoom", chatname);
+	
+			socket.on("userJoin", (username) => {
+				setMessages(m => [...m, {text: `Admin added ${username}`, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+			});
+	
+			socket.on("userLeft", (username) => {
+				setMessages(m => [...m, {text: `${username} left the chat`, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+			});
+			
+			socket.on("message", (username, message) => {
+				console.log('Received message:', message);
+				setMessages(m => [...m, {text: message, image: "", username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+			});
+			
+			socket.on('receiveImage', (username, image) => {
+				setMessages(m => [...m, {text: "", image: image, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+			});
+			
+			socket.on("roomDeleted", (message) => {
+				console.log(message);
+				router.push("/");
+			})
+			
+			socket.on("kicked", (username) => {
+				setMessages(m => [...m, {text: `Admin kicked ${username}`, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setChatDetails(cd => ({...cd, memberUsernames: cd.memberUsernames.filter(uname => uname !== username)}));
+				if(userName == username){
+					router.push("/");
+				}
+			})
+			
+			socket.on("banned", (username, type) => {
+				setMessages(m => [...m, {text: `Admin ${type == "Ban" ? "banned" : "unbanned"} ${username}`, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				if(type == "Ban"){
+					setChatDetails(cd => ({...cd, bannedUsernames: [...cd.bannedUsernames, username]}));
+					if(userName == username){
+						router.push("/");
+					}
+				} else{
+					setChatDetails(cd => ({...cd, bannedUsernames: cd.bannedUsernames.filter(bannedUser => bannedUser !== username)}));
+				}
+			})
+	
+			socket.on('user-typing', () => {
+				setIsTyping(true);
+			});
+			socket.on('user-stopped-typing', () => {
+				setIsTyping(false);
+			});
+			socket.on("profilePictureChanged", (profilePicture) => {
+				setChatDetails(cd => ({...cd, profilePicture}));
+			})
+			socket.on("backgroundImageChanged", (backgroundImage) => {
+				setChatDetails(cd => ({...cd, backgroundImage}));
+			})
+		}
 
         return () => {
             socket.off("message");
         };
-    }, []);
+    }, [userName]);
 
 	useEffect(() => {
 		if (scrollRef.current) {
@@ -391,6 +419,7 @@ export default function Chat() {
 
 	return (
 		<>
+		{chatDetails.memberUsernames && isOwner && <AdminBoard chatname={chatname} usernames={chatDetails.memberUsernames} banned={chatDetails.bannedUsernames} />}
 		  <div className='flex items-center'>
 			<img src={chatDetails.profilePicture} alt="Chat Profile" className='w-20 h-20 rounded-full border-2 border-black' />
 			<h1 className='text-xl font-semibold'>{chatname}</h1>

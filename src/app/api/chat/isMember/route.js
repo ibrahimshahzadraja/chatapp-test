@@ -21,6 +21,10 @@ export async function POST(req) {
     }
     
     const chat = await Chat.findOne({chatname});
+
+    if(chat.banned.includes(new mongoose.Types.ObjectId(userId))){
+        return new ApiResponse("User is banned", null, false, 400);
+    }
     
     if(!chat){
         return new ApiResponse("Chat doesn't exists", null, false, 400);

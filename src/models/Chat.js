@@ -28,7 +28,12 @@ const chatSchema = new mongoose.Schema({
     backgroundImage: {
         type: String,
         default: ""
-    }
+    },
+    banned: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: []
+    }]
 }, { timestamps: true });
 
 chatSchema.pre("save", async function (next) {
