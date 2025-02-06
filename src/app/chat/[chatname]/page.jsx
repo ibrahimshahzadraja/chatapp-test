@@ -204,7 +204,7 @@ export default function Chat() {
 		console.log(data);
 
 		if(data.success){
-			socket.emit("userJoined", {chatname, username: addUser});
+			socket.emit("userJoined", {chatname, username: addUser, text: `Admin added ${addUser}`});
 			await sendSystemMessage(`Admin added ${addUser}`);
 			setChatDetails(cd => ({...cd, memberUsernames: [...cd.memberUsernames, addUser]}));			  
 			setAddUser("");
@@ -335,8 +335,8 @@ export default function Chat() {
 		if(userName){
 			socket.emit("joinRoom", chatname);
 	
-			socket.on("userJoin", (username) => {
-				setMessages(m => [...m, {text: `Admin added ${username}`, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+			socket.on("userJoin", (username, text) => {
+				setMessages(m => [...m, {text, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 	
 			socket.on("userLeft", (username) => {

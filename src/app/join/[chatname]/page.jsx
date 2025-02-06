@@ -33,11 +33,10 @@ export default function Chat() {
                 if(!data.success){
                     router.push("/login");
                 } else{
-                    setUsername(data.data.username);
+                    setUsername(data.data);
                 }
-                console.log(data);
             } else{
-                setUsername(data.data.username);
+                setUsername(data.data);
             }
         }
         auth();
@@ -67,7 +66,7 @@ export default function Chat() {
     const data = await response.json();
     
     if(data.success){
-        socket.emit("userJoined", {chatname, username});
+        socket.emit("userJoined", {chatname, username, text: `${username} joined the chat`});
         await sendSystemMessage(`${username} joined the chat`);
       router.push(`/chat/${chatname}`);
     } else{
