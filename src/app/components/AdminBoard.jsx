@@ -2,7 +2,7 @@
 import React from 'react'
 import { socket } from '@/socket';
 
-export default function AdminBoard({chatname, usernames, banned}) {
+export default function AdminBoard({chatname, usernames, banned, setShowAdminBoard}) {
 
 
   async function sendSystemMessage(text) {
@@ -53,16 +53,19 @@ export default function AdminBoard({chatname, usernames, banned}) {
   }
 
   return (
-    <div className='min-w-[300px] w-1/3 max-w-[600px] min-h-[400px] overflow-y-auto bg-gray-200'>
-        {usernames.map((username, index) => 
-          <div key={index} className='flex items-center justify-between mx-2'>
-            <span className='my-2 mx-4 text-xl font-medium'>{username}</span>
-            <div>
-              {!banned.includes(username) && <button onClick={() => kick(username)} className='px-3 py-1 cursor-pointer m-1 bg-red-800 text-white w-20'>Kick</button>}
-              <button onClick={() => ban(username, banned.includes(username) ? "Unban" : "Ban")} className='px-3 py-1 cursor-pointer m-1 bg-red-800 text-white w-20'>{banned.includes(username) ? "Unban" : "Ban"}</button>
+    <div className='w-[100vw] h-[100vh] bg-slate-50 fixed top-0 right-0 grid place-items-center z-10'>
+      <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={() => setShowAdminBoard(a => !a)}>Close</button>
+      <div className='min-w-[300px] w-3/4 sm:w-1/3 max-w-[600px] min-h-[400px] overflow-y-auto bg-gray-200'>
+          {usernames.map((username, index) => 
+            <div key={index} className='flex items-center justify-between mx-2'>
+              <span className='my-2 mx-4 text-xl font-medium'>{username}</span>
+              <div>
+                {!banned.includes(username) && <button onClick={() => kick(username)} className='px-3 py-1 cursor-pointer m-1 bg-red-800 text-white w-20'>Kick</button>}
+                <button onClick={() => ban(username, banned.includes(username) ? "Unban" : "Ban")} className='px-3 py-1 cursor-pointer m-1 bg-red-800 text-white w-20'>{banned.includes(username) ? "Unban" : "Ban"}</button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+      </div>
     </div>
   )
 }

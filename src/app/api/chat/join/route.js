@@ -36,7 +36,7 @@ export async function POST(req) {
         return new ApiResponse("Already a member", null, false, 400);
     }
     
-    if(chat.banned.includes(new mongoose.Types.ObjectId(user._id))){
+    if(chat.banned.includes(new mongoose.Types.ObjectId(userId))){
         return new ApiResponse("User is banned", null, false, 400);
     }
 

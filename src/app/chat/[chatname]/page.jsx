@@ -19,6 +19,7 @@ export default function Chat() {
 	const [userName, setUserName] = useState("");
 	const [image, setImage] = useState(null);
 	const [addUser, setAddUser] = useState("");
+	const [showAdminBoard, setShowAdminBoard] = useState(false);
 
 	const imageInputRef = useRef(null);
 	const profileInputRef = useRef(null);
@@ -419,7 +420,8 @@ export default function Chat() {
 
 	return (
 		<>
-		{chatDetails.memberUsernames && isOwner && <AdminBoard chatname={chatname} usernames={chatDetails.memberUsernames} banned={chatDetails.bannedUsernames} />}
+		<button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={() => setShowAdminBoard(a => !a)}>Show Admin Board</button>
+		{showAdminBoard && chatDetails.memberUsernames && isOwner && <AdminBoard setShowAdminBoard={setShowAdminBoard} chatname={chatname} usernames={chatDetails.memberUsernames} banned={chatDetails.bannedUsernames} />}
 		  <div className='flex items-center'>
 			<img src={chatDetails.profilePicture} alt="Chat Profile" className='w-20 h-20 rounded-full border-2 border-black' />
 			<h1 className='text-xl font-semibold'>{chatname}</h1>
