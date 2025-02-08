@@ -14,7 +14,7 @@ export async function uploadOnCloudinary(file){
             return null;
         }
 
-        const uploadedFile = await cloudinary.uploader.upload(`data:${file.type};base64,${base64File}`);
+        const uploadedFile = await cloudinary.uploader.upload(`data:${file.type};base64,${base64File}`, {resource_type: 'auto'});
 
         if(!uploadedFile) {
             return null;

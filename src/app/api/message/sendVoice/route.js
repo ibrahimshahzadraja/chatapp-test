@@ -17,27 +17,29 @@ export async function POST(req) {
     await dbConnect();
 
     const formData = await req.formData();
-    const image = formData.get('image');
+    const voice = formData.get('voice');
     const chatname = formData.get('chatname');
 
-    if(!image){
-        return new ApiResponse("Image not found", null, false, 400);
+    console.log(voice);
+
+    if(!voice){
+        return new ApiResponse("Audio not found", null, false, 400);
     }
 
     if(!chatname){
         return new ApiResponse("Chatname is required", null, false, 400);
     }
 
-    const url = await uploadOnCloudinary(image);
+    const url = await uploadOnCloudinary(voice);
 
     if(!url) {
-        return new ApiResponse("Error uploading image", null, false, 500);
+        return new ApiResponse("Error uploading audio", null, false, 500);
     }
 
     const chat = await Chat.findOne({chatname});
 
     const message = new Message({
-        image: url,
+        voice: url,
         sendTo: chat._id,
         sendBy: new mongoose.Types.ObjectId(userId)
     });

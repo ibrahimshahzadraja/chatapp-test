@@ -9,6 +9,10 @@ const messageSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    voice: {
+        type: String,
+        default: ""
+    },
     isSystemMessage: {
         type: Boolean,
         default: false

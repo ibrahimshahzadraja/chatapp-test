@@ -20,6 +20,12 @@ export default function Chat() {
 	const [image, setImage] = useState(null);
 	const [addUser, setAddUser] = useState("");
 	const [showAdminBoard, setShowAdminBoard] = useState(false);
+	const [isRecording, setIsRecording] = useState(false);
+	const [audioBlob, setAudioBlob] = useState(null);
+	const [audioURL, setAudioURL] = useState(null);
+
+	const mediaRecorderRef = useRef(null);
+	const audioChunksRef = useRef([]);
 
 	const imageInputRef = useRef(null);
 	const profileInputRef = useRef(null);
@@ -117,7 +123,7 @@ export default function Chat() {
 		if(!msg) return;
         console.log('Sending message:', msg);
         socket.emit("sendMessage", { chatname, username: userName ,message: msg });
-		setMessages(m => [...m, {text: msg, image: "", isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
+		setMessages(m => [...m, {text: msg, image: "",voice: "", isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
         
         const res = await fetch("/api/message/send", {
             method: "POST",
@@ -141,7 +147,7 @@ export default function Chat() {
 		  const base64Image = reader.result;
 		  setImage(base64Image);
 		  socket.emit('sendImage', {chatname, username: userName, image: base64Image});
-		  setMessages(m => [...m, {text: "", image: base64Image, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
+		  setMessages(m => [...m, {text: "", image: base64Image,voice: "", isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
 		};
 	
 		if (file) {
@@ -247,6 +253,51 @@ export default function Chat() {
 		}
 	}
 
+	async function sendVoice(audioFile) {
+		const formData = new FormData();
+		formData.append('voice', audioFile);
+		formData.append('chatname', chatname);
+
+		const response = await fetch("/api/message/sendVoice", { 
+			method: 'POST',
+			body: formData,
+		});
+		const data = await response.json();
+	}
+
+	const startRecording = async () => {
+		setIsRecording(true);
+		audioChunksRef.current = [];
+	  
+		const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+		mediaRecorderRef.current = new MediaRecorder(stream);
+	  
+		mediaRecorderRef.current.ondataavailable = (event) => {
+		  audioChunksRef.current.push(event.data);
+		};
+	  
+		mediaRecorderRef.current.start();
+	  };
+	  
+	  const stopRecording = () => {
+		if (mediaRecorderRef.current) {
+		  mediaRecorderRef.current.stop();
+		  mediaRecorderRef.current.onstop = async() => {
+			setIsRecording(false);
+	  
+			const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/mp3' });
+			const audioURL = URL.createObjectURL(audioBlob);
+			const audioFile = new File([audioBlob], 'voice.mp3', { type: 'audio/mp3' });
+	  
+			socket.emit('send-voice', { username: userName, chatname, audioBlob });
+			setMessages((m) => [...m, {text: '', image: '', voice: audioURL, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}]);
+
+			await sendVoice(audioFile);
+		  };
+		}
+	  };
+	  
+
     useEffect(() => {
         async function auth(){
             const res = await fetch("/api/users/getUser", {
@@ -336,20 +387,20 @@ export default function Chat() {
 			socket.emit("joinRoom", chatname);
 	
 			socket.on("userJoin", (username, text) => {
-				setMessages(m => [...m, {text, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text, image: "", voice: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 	
 			socket.on("userLeft", (username) => {
-				setMessages(m => [...m, {text: `${username} left the chat`, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: `${username} left the chat`, image: "", voice: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
 			socket.on("message", (username, message) => {
 				console.log('Received message:', message);
-				setMessages(m => [...m, {text: message, image: "", username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: message, image: "", voice: "", username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
 			socket.on('receiveImage', (username, image) => {
-				setMessages(m => [...m, {text: "", image: image, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: "", image,voice: "", username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
 			socket.on("roomDeleted", (message) => {
@@ -358,7 +409,7 @@ export default function Chat() {
 			})
 			
 			socket.on("kicked", (username) => {
-				setMessages(m => [...m, {text: `Admin kicked ${username}`, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: `Admin kicked ${username}`, image: "",voice: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 				setChatDetails(cd => ({...cd, memberUsernames: cd.memberUsernames.filter(uname => uname !== username)}));
 				if(userName == username){
 					router.push("/");
@@ -366,7 +417,7 @@ export default function Chat() {
 			})
 			
 			socket.on("banned", (username, type) => {
-				setMessages(m => [...m, {text: `Admin ${type == "Ban" ? "banned" : "unbanned"} ${username}`, image: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: `Admin ${type == "Ban" ? "banned" : "unbanned"} ${username}`, image: "",voice: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 				if(type == "Ban"){
 					setChatDetails(cd => ({...cd, bannedUsernames: [...cd.bannedUsernames, username]}));
 					if(userName == username){
@@ -389,6 +440,13 @@ export default function Chat() {
 			socket.on("backgroundImageChanged", (backgroundImage) => {
 				setChatDetails(cd => ({...cd, backgroundImage}));
 			})
+			socket.on('receive-voice', (username, audioData) => {
+				console.log(audioData);
+				const audioBlob = new Blob([audioData], { type: 'audio/mp3' });
+				const audioURL = URL.createObjectURL(audioBlob);
+				console.log(audioURL);
+				setMessages((m) => [...m,{text: '', image: '', voice: audioURL, isSystemMessage: false, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+			});
 		}
 
         return () => {
@@ -446,6 +504,9 @@ export default function Chat() {
 											<div className='text-xs absolute bottom-0 right-0 m-1'>{new Date(message.createdAt).toLocaleTimeString('en-US', {hour: 'numeric',minute: 'numeric',hour12: true})}</div>
 										</div>}
 						{message.isSystemMessage && <div className='text-gray-300 text-sm'>{message.text}</div> }
+						{message.voice && <audio controls>
+												<source src={message.voice} type='audio/mp3' />
+											</audio>}
 					</div>
 				))}
 				{isTyping && <p className='bg-gray-900 text-gray-300 px-3 py-2 my-2 mx-2 rounded-md w-fit'>User is typing...</p>}
@@ -455,6 +516,13 @@ export default function Chat() {
                 <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={sendMessage}>Send</button>
 				<input type="file" accept="image/*" onChange={sendImage} ref={imageInputRef} />
             </div>
+			<div>
+			{!isRecording ? (
+			<button onClick={startRecording} className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white">Start Recording</button>
+			) : (
+			<button onClick={stopRecording} className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white">Stop Recording</button>
+			)}
+		</div>
 			{!isOwner && <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={leaveChat}>Leave chat {chatname}</button>}
 			{isOwner && <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={deleteChat}>Delete chat {chatname}</button>}
 		</>
