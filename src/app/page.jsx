@@ -128,13 +128,13 @@ export default function ChatPage() {
                 {
                     rooms.map((r, index) => {
                         return(
-                            <div key={index} className='cursor-pointer border-2 border-black m-1 p-1 w-[250px] h-20' >
+                            <div key={index} className='cursor-pointer border-2 border-black m-1 p-1 sm:w-[250px] w-5/6 box-border h-20' >
                                 <Link href={`/chat/${r.chatname}`}>
                                     <div className='flex h-full'>
                                         <img src={r.profilePicture} alt="image" className='h-full w-20 rounded-full' />
                                         <div className='ml-2'>
                                             <p>{r.chatname}</p>
-                                            <p>{r.sendByUsername ? `${r.sendByUsername}:` : ""}{r.messageText ? r.messageText : r.sendByUsername ? "image" : ""}</p>
+                                            <p>{r.sendByUsername ? `${r.sendByUsername}:` : ""}{r.messageText ? r.messageText : r.image ? "image" : r.voice ? "voice" : ""}</p>
                                         </div>
                                     </div>
                                 </Link>

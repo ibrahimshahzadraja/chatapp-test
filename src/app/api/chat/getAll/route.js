@@ -72,6 +72,18 @@ export async function GET(req) {
               ""
             ]
           },
+          image: {
+            $ifNull: [
+              { $arrayElemAt: ["$messages.image", 0] },
+              ""
+            ]
+          },
+          voice: {
+            $ifNull: [
+              { $arrayElemAt: ["$messages.voice", 0] },
+              ""
+            ]
+          },
           sendByUsername: {
             $ifNull: [
               { $arrayElemAt: ["$sendByUser.username", 0] },

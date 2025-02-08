@@ -266,17 +266,26 @@ export default function Chat() {
 	}
 
 	const startRecording = async () => {
-		setIsRecording(true);
-		audioChunksRef.current = [];
-	  
-		const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-		mediaRecorderRef.current = new MediaRecorder(stream);
-	  
-		mediaRecorderRef.current.ondataavailable = (event) => {
-		  audioChunksRef.current.push(event.data);
-		};
-	  
-		mediaRecorderRef.current.start();
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			setIsRecording(true);
+			audioChunksRef.current = [];
+			mediaRecorderRef.current = new MediaRecorder(stream);
+		  
+			mediaRecorderRef.current.ondataavailable = (event) => {
+			  audioChunksRef.current.push(event.data);
+			};
+		  
+			mediaRecorderRef.current.start();
+		} catch (error) {
+			if (error.name === 'NotAllowedError') {
+				alert('Please enable microphone access in your browser or mobile settings.');
+			} else if (error.name === 'NotFoundError') {
+				alert('No microphone found on this device.');
+			} else {
+				console.error('Error accessing microphone:', error);
+			}
+		}
 	  };
 	  
 	  const stopRecording = () => {
@@ -504,7 +513,7 @@ export default function Chat() {
 											<div className='text-xs absolute bottom-0 right-0 m-1'>{new Date(message.createdAt).toLocaleTimeString('en-US', {hour: 'numeric',minute: 'numeric',hour12: true})}</div>
 										</div>}
 						{message.isSystemMessage && <div className='text-gray-300 text-sm'>{message.text}</div> }
-						{message.voice && <audio controls>
+						{message.voice && <audio controls className='max-sm:w-[60vw]'>
 												<source src={message.voice} type='audio/mp3' />
 											</audio>}
 					</div>
