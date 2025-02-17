@@ -2,6 +2,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { socket } from '@/socket';
+import { saveAs } from 'file-saver';
 import AdminBoard from '@/app/components/AdminBoard';
 
 let typingTimeout;
@@ -28,6 +29,7 @@ export default function Chat() {
 	const audioChunksRef = useRef([]);
 
 	const imageInputRef = useRef(null);
+	const fileInputRef = useRef(null);
 	const profileInputRef = useRef(null);
 	const scrollRef = useRef(null);
 	const backgroundImageRef = useRef(null);
@@ -123,7 +125,7 @@ export default function Chat() {
 		if(!msg) return;
         console.log('Sending message:', msg);
         socket.emit("sendMessage", { chatname, username: userName ,message: msg });
-		setMessages(m => [...m, {text: msg, image: "",voice: "", isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
+		setMessages(m => [...m, {text: msg, image: "",voice: "",fileUrl: "", isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
         
         const res = await fetch("/api/message/send", {
             method: "POST",
@@ -147,7 +149,7 @@ export default function Chat() {
 		  const base64Image = reader.result;
 		  setImage(base64Image);
 		  socket.emit('sendImage', {chatname, username: userName, image: base64Image});
-		  setMessages(m => [...m, {text: "", image: base64Image,voice: "", isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
+		  setMessages(m => [...m, {text: "", image: base64Image,voice: "",fileUrl: "", isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
 		};
 	
 		if (file) {
@@ -155,10 +157,11 @@ export default function Chat() {
 		}
 
 		const formData = new FormData()
-		formData.append('image', file);
+		formData.append('file', file);
 		formData.append('chatname', chatname);
+		formData.append('type', "image");
 
-        const response = await fetch("/api/message/sendImage", {
+        const response = await fetch("/api/message/sendMedia", {
             method: 'POST',
             body: formData,
         });
@@ -255,10 +258,11 @@ export default function Chat() {
 
 	async function sendVoice(audioFile) {
 		const formData = new FormData();
-		formData.append('voice', audioFile);
+		formData.append('file', audioFile);
 		formData.append('chatname', chatname);
+		formData.append('type', "voice");
 
-		const response = await fetch("/api/message/sendVoice", { 
+		const response = await fetch("/api/message/sendMedia", { 
 			method: 'POST',
 			body: formData,
 		});
@@ -299,12 +303,35 @@ export default function Chat() {
 			const audioFile = new File([audioBlob], 'voice.mp3', { type: 'audio/mp3' });
 	  
 			socket.emit('send-voice', { username: userName, chatname, audioBlob });
-			setMessages((m) => [...m, {text: '', image: '', voice: audioURL, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}]);
+			setMessages((m) => [...m, {text: '', image: '', voice: audioURL,fileUrl: "", isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}]);
 
 			await sendVoice(audioFile);
 		  };
 		}
 	  };
+	
+	async function sendFile(e) {
+		const file = e.target.files[0];
+
+		const formData = new FormData()
+		formData.append('file', file);
+		formData.append('chatname', chatname);
+		formData.append('type', "file");
+
+		fileInputRef.current.value = null;
+
+        const response = await fetch("/api/message/sendMedia", {
+            method: 'POST',
+            body: formData,
+        });
+    
+        const data = await response.json();
+
+		if(data.success){
+			setMessages((m) => [...m,{text: '', image: '', voice: '', file: {fileUrl: data.data.fileUrl, fileName: data.data.fileName}, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}]);
+			socket.emit("send-file", {username: userName, chatname, fileUrl: data.data});
+		}
+	}
 	  
 
     useEffect(() => {
@@ -396,20 +423,20 @@ export default function Chat() {
 			socket.emit("joinRoom", chatname);
 	
 			socket.on("userJoin", (username, text) => {
-				setMessages(m => [...m, {text, image: "", voice: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text, image: "", voice: "",fileUrl: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 	
 			socket.on("userLeft", (username) => {
-				setMessages(m => [...m, {text: `${username} left the chat`, image: "", voice: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: `${username} left the chat`, image: "", voice: "",fileUrl: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
 			socket.on("message", (username, message) => {
 				console.log('Received message:', message);
-				setMessages(m => [...m, {text: message, image: "", voice: "", username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: message, image: "", voice: "",fileUrl: "", username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
 			socket.on('receiveImage', (username, image) => {
-				setMessages(m => [...m, {text: "", image,voice: "", username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: "", image,voice: "",fileUrl: "", username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
 			socket.on("roomDeleted", (message) => {
@@ -418,7 +445,7 @@ export default function Chat() {
 			})
 			
 			socket.on("kicked", (username) => {
-				setMessages(m => [...m, {text: `Admin kicked ${username}`, image: "",voice: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: `Admin kicked ${username}`, image: "",voice: "",fileUrl: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 				setChatDetails(cd => ({...cd, memberUsernames: cd.memberUsernames.filter(uname => uname !== username)}));
 				if(userName == username){
 					router.push("/");
@@ -426,7 +453,7 @@ export default function Chat() {
 			})
 			
 			socket.on("banned", (username, type) => {
-				setMessages(m => [...m, {text: `Admin ${type == "Ban" ? "banned" : "unbanned"} ${username}`, image: "",voice: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: `Admin ${type == "Ban" ? "banned" : "unbanned"} ${username}`, image: "",voice: "", fileUrl: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 				if(type == "Ban"){
 					setChatDetails(cd => ({...cd, bannedUsernames: [...cd.bannedUsernames, username]}));
 					if(userName == username){
@@ -454,7 +481,10 @@ export default function Chat() {
 				const audioBlob = new Blob([audioData], { type: 'audio/mp3' });
 				const audioURL = URL.createObjectURL(audioBlob);
 				console.log(audioURL);
-				setMessages((m) => [...m,{text: '', image: '', voice: audioURL, isSystemMessage: false, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages((m) => [...m,{text: '', image: '', voice: audioURL, file: '', isSystemMessage: false, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+			});
+			socket.on('receive-file', (username, fileUrl) => {
+				setMessages((m) => [...m,{text: '', image: '', voice: '', file: fileUrl, isSystemMessage: false, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 		}
 
@@ -477,6 +507,12 @@ export default function Chat() {
 		typingTimeout = setTimeout(() => {
 		  socket.emit('user-stopped-typing', chatname);
 		}, 1000);
+	};
+	
+	const downloadFile = async (fileUrl, fileName) => {
+		const response = await fetch(fileUrl);
+		const blob = await response.blob();
+		saveAs(blob, fileName);
 	  };
 
     if(!isMember && !isOwner){
@@ -516,6 +552,9 @@ export default function Chat() {
 						{message.voice && <audio controls className='max-sm:w-[60vw]'>
 												<source src={message.voice} type='audio/mp3' />
 											</audio>}
+						{message.file && <div>
+											<button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={() => downloadFile(message.file.fileUrl, message.file.fileName)}>Download {message.file.fileName}</button>
+										</div> }
 					</div>
 				))}
 				{isTyping && <p className='bg-gray-900 text-gray-300 px-3 py-2 my-2 mx-2 rounded-md w-fit'>User is typing...</p>}
@@ -532,6 +571,7 @@ export default function Chat() {
 			<button onClick={stopRecording} className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white">Stop Recording</button>
 			)}
 		</div>
+			<input type="file" onChange={sendFile} ref={fileInputRef} />
 			{!isOwner && <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={leaveChat}>Leave chat {chatname}</button>}
 			{isOwner && <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={deleteChat}>Delete chat {chatname}</button>}
 		</>

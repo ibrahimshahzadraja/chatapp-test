@@ -1,4 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
+import { Buffer } from 'buffer';
+import path from 'path';
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -6,17 +8,28 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-export async function uploadOnCloudinary(file){
+export async function uploadOnCloudinary(file, type) {
     try {
-        const base64File = Buffer.from(await file.arrayBuffer()).toString('base64');
-
-        if(!base64File) {
+        if (!file) {
             return null;
         }
 
-        const uploadedFile = await cloudinary.uploader.upload(`data:${file.type};base64,${base64File}`, {resource_type: 'auto'});
+        const extension = path.extname(file.name);
+        const originalFilename = file.name || "file";
+        const timestamp = Date.now();
+        const uniqueFilename = `${originalFilename.split(".")[0]}_${timestamp}${extension}`;
 
-        if(!uploadedFile) {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const base64File = `data:${file.type};base64,${buffer.toString('base64')}`;
+
+        const resourceType = type === "file" ? "raw" : "auto";
+
+        const uploadedFile = await cloudinary.uploader.upload(base64File, {
+            resource_type: resourceType,
+            public_id: `uploads/${uniqueFilename}`,
+        });
+
+        if (!uploadedFile) {
             return null;
         }
 

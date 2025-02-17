@@ -13,6 +13,16 @@ const messageSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    file: {
+        fileUrl: {
+            type: String,
+            default: ""
+        },
+        fileName: {
+            type: String,
+            default: ""
+        }
+    },
     isSystemMessage: {
         type: Boolean,
         default: false
