@@ -552,7 +552,7 @@ export default function Chat() {
 						{message.voice && <audio controls className='max-sm:w-[60vw]'>
 												<source src={message.voice} type='audio/mp3' />
 											</audio>}
-						{message.file && !message.file.fileName.endsWith(".mp4") && <div>
+						{message.file.fileUrl && !message.file.fileName.endsWith(".mp4") && <div>
 											<button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={() => downloadFile(message.file.fileUrl, message.file.fileName)}>Download {message.file.fileName}</button>
 										</div> }
 						{message.file.fileName.endsWith(".mp4") && <video className="w-[350px] h-[200px]" src={message.file.fileUrl} controls></video> }
