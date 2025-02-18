@@ -5,7 +5,6 @@ import Message from "@/models/Message";
 import Chat from "@/models/Chat";
 import { uploadOnCloudinary } from "@/lib/uploadOnCloudinary";
 import mongoose from "mongoose";
-import { encrypt, decrypt } from "@/utils/encryption";
 
 export async function POST(req) {
 
@@ -37,16 +36,12 @@ export async function POST(req) {
 
     if(type == "image"){
         image = await uploadOnCloudinary(file, type);
-        image = encrypt(image);
     } else if(type == "video"){
         video = await uploadOnCloudinary(file, type);
-        video = encrypt(video);
     } else if(type == "voice"){
         voice = await uploadOnCloudinary(file, type);
-        voice = encrypt(voice);
     } else if(type == "file"){
         fileUrl = await uploadOnCloudinary(file, type);
-        fileUrl = encrypt(fileUrl);
     }
     
 
@@ -87,7 +82,6 @@ export async function POST(req) {
     }
 
     let uploadedUrl = image || voice || fileUrl || video;
-    uploadedUrl = decrypt(uploadedUrl);
 
     return new ApiResponse("File sent successfully", {fileUrl: uploadedUrl, fileName: file.name}, true, 200);
 }

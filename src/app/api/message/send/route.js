@@ -4,7 +4,6 @@ import ApiResponse from "@/helpers/ApiResponse";
 import mongoose from "mongoose";
 import Chat from "@/models/Chat";
 import auth from "@/helpers/auth";
-import { encrypt } from "@/utils/encryption";
 
 export async function POST(req) {
 
@@ -28,10 +27,8 @@ export async function POST(req) {
 
     const chat = await Chat.findOne({chatname});
 
-    const encryptedText = encrypt(text);
-
     const message = new Message({
-        text: encryptedText,
+        text,
         sendTo: chat._id,
         sendBy: new mongoose.Types.ObjectId(userId)
     });

@@ -4,7 +4,6 @@ import ApiResponse from "@/helpers/ApiResponse";
 import mongoose from "mongoose";
 import Chat from "@/models/Chat";
 import auth from "@/helpers/auth";
-import { decrypt } from "@/utils/encryption";
 
 export async function POST(req) {
 
@@ -79,24 +78,6 @@ export async function POST(req) {
     if(!messages){
         return new ApiResponse("No messages found", null, false, 400);
     }
-
-    messages.map((message) => {
-      if (message.text) {
-        message.text = decrypt(message.text);
-      }
-      if(message.image.imageUrl){
-        message.image.imageUrl = decrypt(message.image.imageUrl);
-      }
-      if(message.video.videoUrl){
-        message.video.videoUrl = decrypt(message.video.videoUrl);
-      }
-      if(message.file.fileUrl){
-        message.file.fileUrl = decrypt(message.file.fileUrl);
-      }
-      if(message.voice){
-        message.voice = decrypt(message.voice);
-      }
-    });
 
     return new ApiResponse("Messages found successfully", messages, true, 200);
 
