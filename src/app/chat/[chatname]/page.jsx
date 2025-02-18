@@ -30,6 +30,7 @@ export default function Chat() {
 
 	const imageInputRef = useRef(null);
 	const fileInputRef = useRef(null);
+	const videoInputRef = useRef(null);
 	const profileInputRef = useRef(null);
 	const scrollRef = useRef(null);
 	const backgroundImageRef = useRef(null);
@@ -123,9 +124,11 @@ export default function Chat() {
 
     async function sendMessage() {
 		if(!msg) return;
-        console.log('Sending message:', msg);
+
         socket.emit("sendMessage", { chatname, username: userName ,message: msg });
-		setMessages(m => [...m, {text: msg, image: "",voice: "",fileUrl: "", isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
+		setMessages(m => [...m, {text: msg, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
+
+		setMsg("");
         
         const res = await fetch("/api/message/send", {
             method: "POST",
@@ -138,7 +141,6 @@ export default function Chat() {
             })
         });
         const data = await res.json();
-        setMsg("");
     }
 
 	async function sendImage(e) {
@@ -149,7 +151,7 @@ export default function Chat() {
 		  const base64Image = reader.result;
 		  setImage(base64Image);
 		  socket.emit('sendImage', {chatname, username: userName, image: base64Image});
-		  setMessages(m => [...m, {text: "", image: base64Image,voice: "",fileUrl: "", isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
+		  setMessages(m => [...m, {text: "", image: {imageUrl: base64Image, imageName: file.name},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
 		};
 	
 		if (file) {
@@ -303,7 +305,7 @@ export default function Chat() {
 			const audioFile = new File([audioBlob], 'voice.mp3', { type: 'audio/mp3' });
 	  
 			socket.emit('send-voice', { username: userName, chatname, audioBlob });
-			setMessages((m) => [...m, {text: '', image: '', voice: audioURL,fileUrl: "", isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}]);
+			setMessages((m) => [...m, {text: '', image: {imageUrl: "", imageName: ""},voice: audioURL,video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}]);
 
 			await sendVoice(audioFile);
 		  };
@@ -318,8 +320,7 @@ export default function Chat() {
 		formData.append('chatname', chatname);
 		formData.append('type', "file");
 
-		fileInputRef.current.value = null;
-
+		
         const response = await fetch("/api/message/sendMedia", {
             method: 'POST',
             body: formData,
@@ -328,8 +329,32 @@ export default function Chat() {
         const data = await response.json();
 
 		if(data.success){
-			setMessages((m) => [...m,{text: '', image: '', voice: '', file: {fileUrl: data.data.fileUrl, fileName: data.data.fileName}, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}]);
-			socket.emit("send-file", {username: userName, chatname, fileUrl: data.data});
+			fileInputRef.current.value = null;
+			setMessages((m) => [...m,{text: '', image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""}, file: {fileUrl: data.data.fileUrl, fileName: data.data.fileName}, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}]);
+			socket.emit("send-file", {username: userName, chatname, fileUrl: data.data.fileUrl, fileName: data.data.fileName});
+		}
+	}
+	
+	async function sendVideo(e) {
+		const file = e.target.files[0];
+
+		const formData = new FormData()
+		formData.append('file', file);
+		formData.append('chatname', chatname);
+		formData.append('type', "video");
+
+		
+        const response = await fetch("/api/message/sendMedia", {
+            method: 'POST',
+            body: formData,
+        });
+    
+        const data = await response.json();
+
+		if(data.success){
+			videoInputRef.current.value = null;
+			setMessages((m) => [...m,{text: '', image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: data.data.fileUrl, videoName: data.data.fileName},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}]);
+			socket.emit("send-video", {username: userName, chatname, videoUrl: data.data.fileUrl, videoName: data.data.fileName});
 		}
 	}
 	  
@@ -423,20 +448,20 @@ export default function Chat() {
 			socket.emit("joinRoom", chatname);
 	
 			socket.on("userJoin", (username, text) => {
-				setMessages(m => [...m, {text, image: "", voice: "",fileUrl: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 	
 			socket.on("userLeft", (username) => {
-				setMessages(m => [...m, {text: `${username} left the chat`, image: "", voice: "",fileUrl: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: `${username} left the chat`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
 			socket.on("message", (username, message) => {
 				console.log('Received message:', message);
-				setMessages(m => [...m, {text: message, image: "", voice: "",fileUrl: "", username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: message, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
-			socket.on('receiveImage', (username, image) => {
-				setMessages(m => [...m, {text: "", image,voice: "",fileUrl: "", username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+			socket.on('receiveImage', (username, image, imageName) => {
+				setMessages(m => [...m, {text: "", image: {imageUrl: image, imageName},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
 			socket.on("roomDeleted", (message) => {
@@ -445,7 +470,7 @@ export default function Chat() {
 			})
 			
 			socket.on("kicked", (username) => {
-				setMessages(m => [...m, {text: `Admin kicked ${username}`, image: "",voice: "",fileUrl: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: `Admin kicked ${username}`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 				setChatDetails(cd => ({...cd, memberUsernames: cd.memberUsernames.filter(uname => uname !== username)}));
 				if(userName == username){
 					router.push("/");
@@ -453,7 +478,7 @@ export default function Chat() {
 			})
 			
 			socket.on("banned", (username, type) => {
-				setMessages(m => [...m, {text: `Admin ${type == "Ban" ? "banned" : "unbanned"} ${username}`, image: "",voice: "", fileUrl: "", isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {text: `Admin ${type == "Ban" ? "banned" : "unbanned"} ${username}`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 				if(type == "Ban"){
 					setChatDetails(cd => ({...cd, bannedUsernames: [...cd.bannedUsernames, username]}));
 					if(userName == username){
@@ -481,10 +506,13 @@ export default function Chat() {
 				const audioBlob = new Blob([audioData], { type: 'audio/mp3' });
 				const audioURL = URL.createObjectURL(audioBlob);
 				console.log(audioURL);
-				setMessages((m) => [...m,{text: '', image: '', voice: audioURL, file: '', isSystemMessage: false, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages((m) => [...m,{text: '',image: {imageUrl: "", imageName: ""},voice: audioURL,video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
-			socket.on('receive-file', (username, fileUrl) => {
-				setMessages((m) => [...m,{text: '', image: '', voice: '', file: fileUrl, isSystemMessage: false, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+			socket.on('receive-file', (username, fileUrl, fileName) => {
+				setMessages((m) => [...m,{text: '', image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl, fileName}, isSystemMessage: false, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+			});
+			socket.on('receive-video', (username, videoUrl, videoName) => {
+				setMessages((m) => [...m,{text: '', image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl, videoName},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 		}
 
@@ -542,7 +570,7 @@ export default function Chat() {
 			<div className={`w-full h-[70vh] bg-gray-200 overflow-y-auto bg-cover bg-center`} style={{backgroundImage: chatDetails.backgroundImage ? `url(${chatDetails.backgroundImage})` : 'none',}} ref={scrollRef}>
 				{messages.map((message, index) => (
 					<div key={index} className={`${message.isSystemMessage ? 'bg-gray-900' : message.isSentByMe ? "bg-green-400" : "bg-gray-700"} text-white min-w-28 w-fit max-w-[80%] ${message.isSystemMessage ? 'mx-auto' : message.isSentByMe ? "ml-auto" : "mr-auto"} rounded-md py-2 px-3 my-2 mx-2 relative`}>
-						{message.image && <img src={message.image} alt='image' className="w-[350px] h-[200px]" />}
+						{message.image.imageUrl && <img src={message.image.imageUrl} alt={message.image.imageName} className="w-[350px] h-[200px]" />}
 						{message.text && !message.isSystemMessage && <div>
 											<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
 											<div className='sm:my-4 my-3 sm:text-lg text-base font-sans sm:font-medium break-words'>{message.text}</div>
@@ -552,29 +580,44 @@ export default function Chat() {
 						{message.voice && <audio controls className='max-sm:w-[60vw]'>
 												<source src={message.voice} type='audio/mp3' />
 											</audio>}
-						{message.file?.fileUrl && !message.file?.fileName.endsWith(".mp4") && <div>
+						{message.file.fileUrl && <div>
 											<button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={() => downloadFile(message.file.fileUrl, message.file.fileName)}>Download {message.file.fileName}</button>
 										</div> }
-						{message.file?.fileName.endsWith(".mp4") && <video className="w-[350px] h-[200px]" src={message.file.fileUrl} controls></video> }
+						{message.video.videoUrl && <video className="w-[350px] h-[200px]" src={message.video.videoUrl} controls></video> }
 					</div>
 				))}
 				{isTyping && <p className='bg-gray-900 text-gray-300 px-3 py-2 my-2 mx-2 rounded-md w-fit'>User is typing...</p>}
 			</div>
-		    <div>
-                <input type="text" placeholder="Enter message" onKeyDown={handleTyping} className="border-2 border-black" value={msg} onChange={(e) => setMsg(e.target.value)} />
-                <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={sendMessage}>Send</button>
-				<input type="file" accept="image/*" onChange={sendImage} ref={imageInputRef} />
-            </div>
+		    <div className="flex flex-col gap-4 my-4">
+			<div className="flex gap-2">
+				<input type="text" placeholder="Enter message" onKeyDown={handleTyping} className="border border-gray-300 rounded-md px-4 py-2 w-full" value={msg} onChange={(e) => setMsg(e.target.value)}/>
+				<button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300" onClick={sendMessage}>Send</button>
+			</div>
+			
+			<input type="file" accept="image/*" className="file:py-2 file:px-4 file:rounded-md file:border file:border-gray-300 file:text-gray-700 hover:file:bg-gray-100" onChange={sendImage} ref={imageInputRef} />
+			
+			<div className="flex gap-2">
+				{!isRecording ? (
+					<button onClick={startRecording} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300">Start Recording</button>
+				) : (
+					<button onClick={stopRecording} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300">Stop Recording</button>
+				)}
+			</div>
+
 			<div>
-			{!isRecording ? (
-			<button onClick={startRecording} className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white">Start Recording</button>
-			) : (
-			<button onClick={stopRecording} className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white">Stop Recording</button>
-			)}
+				<label className="block text-lg font-medium text-gray-700 mb-1">Send File</label>
+				<input type="file" className="file:py-2 file:px-4 file:rounded-md file:border file:border-gray-300 file:text-gray-700 hover:file:bg-gray-100" onChange={sendFile} ref={fileInputRef} />
+			</div>
+
+			<div>
+				<label className="block text-lg font-medium text-gray-700 mb-1">Send Video</label>
+				<input type="file" className="file:py-2 file:px-4 file:rounded-md file:border file:border-gray-300 file:text-gray-700 hover:file:bg-gray-100" onChange={sendVideo} ref={videoInputRef} />
+			</div>
 		</div>
-			<input type="file" onChange={sendFile} ref={fileInputRef} />
-			{!isOwner && <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={leaveChat}>Leave chat {chatname}</button>}
-			{isOwner && <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={deleteChat}>Delete chat {chatname}</button>}
+
+		{!isOwner ? (
+			<button className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300" onClick={leaveChat}>Leave chat {chatname}</button>
+			) : (<button className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300" onClick={deleteChat}>Delete chat {chatname}</button>)}
 		</>
 	  );
 	  

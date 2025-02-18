@@ -20,13 +20,13 @@ export async function POST(req) {
     const file = formData.get('file');
     const chatname = formData.get('chatname');
     const type = formData.get('type');
-    let image = "", voice = "", fileUrl = "";
+    let image = "", voice = "", fileUrl = "", video = "";
 
     if(!file){
         return new ApiResponse("File not found", null, false, 400);
     }
 
-    if (!type || !['image', 'voice', 'file'].includes(type)) {
+    if (!type || !['image', 'voice', 'file', 'video'].includes(type)) {
         return new ApiResponse("Invalid type", null, false, 400);
     }
 
@@ -36,6 +36,8 @@ export async function POST(req) {
 
     if(type == "image"){
         image = await uploadOnCloudinary(file, type);
+    } else if(type == "video"){
+        video = await uploadOnCloudinary(file, type);
     } else if(type == "voice"){
         voice = await uploadOnCloudinary(file, type);
     } else if(type == "file"){
@@ -43,32 +45,43 @@ export async function POST(req) {
     }
     
 
-    if(!image && !voice && !fileUrl) {
+    if(!image && !voice && !fileUrl && !video) {
         return new ApiResponse("Error uploading file", null, false, 500);
     }
 
     const chat = await Chat.findOne({chatname});
 
-    if(type !== "file"){
+    if(type == "voice"){
         const message = new Message({
-            image,
             voice,
             sendTo: chat._id,
             sendBy: new mongoose.Types.ObjectId(userId)
         });
         await message.save();
-    } else{
+    } else if(type == "video"){
+        const message = new Message({
+            video: {videoUrl: video, videoName: file.name},
+            sendTo: chat._id,
+            sendBy: new mongoose.Types.ObjectId(userId)
+        });
+        await message.save();
+    } else if(type == "file"){
         const message = new Message({
             file: {fileUrl, fileName: file.name},
             sendTo: chat._id,
             sendBy: new mongoose.Types.ObjectId(userId)
         });
         await message.save();
-
+    } else if(type == "image"){
+        const message = new Message({
+            image: {imageUrl: image, imageName: file.name},
+            sendTo: chat._id,
+            sendBy: new mongoose.Types.ObjectId(userId)
+        });
+        await message.save();
     }
 
-
-    const uploadedUrl = image || voice || fileUrl;
+    const uploadedUrl = image || voice || fileUrl || video;
 
     return new ApiResponse("File sent successfully", {fileUrl: uploadedUrl, fileName: file.name}, true, 200);
 }

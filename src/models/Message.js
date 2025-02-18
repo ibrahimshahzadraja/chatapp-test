@@ -6,12 +6,28 @@ const messageSchema = new mongoose.Schema({
         default: ""
     },
     image: {
-        type: String,
-        default: ""
+        imageUrl: {
+            type: String,
+            default: ""
+        },
+        imageName: {
+            type: String,
+            default: ""
+        }
     },
     voice: {
         type: String,
         default: ""
+    },
+    video: {
+        videoUrl: {
+            type: String,
+            default: ""
+        },
+        videoName: {
+            type: String,
+            default: ""
+        }
     },
     file: {
         fileUrl: {

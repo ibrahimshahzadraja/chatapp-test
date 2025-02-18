@@ -66,6 +66,7 @@ export async function POST(req) {
             text: 1,
             image: 1,
             voice: 1,
+            video: 1,
             file: 1,
             isSentByMe: 1,
             isSystemMessage: 1,
