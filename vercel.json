@@ -1,7 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "api/message/sendMedia/route.js": {
+    "src/app/api/message/sendMedia/route.js": {
       "memory": 300,
       "maxDuration": 60
     }
