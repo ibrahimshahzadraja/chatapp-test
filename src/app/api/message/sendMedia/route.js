@@ -6,6 +6,14 @@ import Chat from "@/models/Chat";
 import { uploadOnCloudinary } from "@/lib/uploadOnCloudinary";
 import mongoose from "mongoose";
 
+export const config = {
+    api: {
+      bodyParser: {
+        sizeLimit: '100mb',
+      },
+    },
+  };
+
 export async function POST(req) {
 
     const isAuthenticated = await auth(req);
