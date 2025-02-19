@@ -348,9 +348,8 @@ export default function Chat() {
             method: 'POST',
             body: formData,
         });
-		
+    
         const data = await response.json();
-		console.log(data);
 
 		if(data.success){
 			videoInputRef.current.value = null;

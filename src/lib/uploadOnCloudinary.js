@@ -24,10 +24,9 @@ export async function uploadOnCloudinary(file, type) {
 
         const resourceType = type === "file" ? "raw" : "auto";
 
-        const uploadedFile = await cloudinary.uploader.upload_large(base64File, {
+        const uploadedFile = await cloudinary.uploader.upload(base64File, {
             resource_type: resourceType,
             public_id: `uploads/${uniqueFilename}`,
-            chunk_size: 6000000,
         });
 
         if (!uploadedFile) {
