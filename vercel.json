@@ -1,10 +1,9 @@
 {
-    "version": 2,
-    "functions": {
-      "api/message/sendMedia": {
-        "memory": 300,
-        "maxDuration": 60
-      }
+  "version": 2,
+  "functions": {
+    "api/message/sendMedia/route.js": {
+      "memory": 300,
+      "maxDuration": 60
     }
   }
-  
+}
