@@ -1,0 +1,10 @@
+{
+    "version": 2,
+    "functions": {
+      "api/message/sendMedia": {
+        "memory": 300,
+        "maxDuration": 600
+      }
+    }
+  }
+  

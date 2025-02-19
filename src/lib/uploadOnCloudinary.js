@@ -22,21 +22,19 @@ export async function uploadOnCloudinary(file, type) {
         const buffer = Buffer.from(await file.arrayBuffer());
         const base64File = `data:${file.type};base64,${buffer.toString('base64')}`;
 
-        console.log("AFtER BASE");
+        const resourceType = type === "file" ? "raw" : "auto";
 
-        // const resourceType = type === "file" ? "raw" : "auto";
+        const uploadedFile = await cloudinary.uploader.upload_large(base64File, {
+            resource_type: resourceType,
+            public_id: `uploads/${uniqueFilename}`,
+            chunk_size: 6000000,
+        });
 
-        // const uploadedFile = await cloudinary.uploader.upload_large(base64File, {
-        //     resource_type: resourceType,
-        //     public_id: `uploads/${uniqueFilename}`,
-        //     chunk_size: 6000000,
-        // });
+        if (!uploadedFile) {
+            return null;
+        }
 
-        // if (!uploadedFile) {
-        //     return null;
-        // }
-
-        return "uploadedFile.secure_url";
+        return uploadedFile.secure_url;
 
     } catch (error) {
         console.log("Error uploading file on cloudinary", error);

@@ -9,7 +9,7 @@ import mongoose from "mongoose";
 export const config = {
     api: {
       bodyParser: {
-        sizeLimit: '100mb',
+        sizeLimit: '300mb',
       },
     },
   };
@@ -41,7 +41,6 @@ export async function POST(req) {
     if(!chatname){
         return new ApiResponse("Chatname is required", null, false, 400);
     }
-    console.log("first");
 
     if(type == "image"){
         image = await uploadOnCloudinary(file, type);
@@ -52,8 +51,6 @@ export async function POST(req) {
     } else if(type == "file"){
         fileUrl = await uploadOnCloudinary(file, type);
     }
-
-    console.log("Second");
     
 
     if(!image && !voice && !fileUrl && !video) {
