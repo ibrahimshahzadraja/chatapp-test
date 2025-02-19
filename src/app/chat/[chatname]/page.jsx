@@ -348,6 +348,8 @@ export default function Chat() {
             method: 'POST',
             body: formData,
         });
+
+		console.log(response);
     
         const data = await response.json();
 
