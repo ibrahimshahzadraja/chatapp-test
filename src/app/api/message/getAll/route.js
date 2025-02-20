@@ -37,7 +37,18 @@ export async function POST(req) {
         {
           $addFields: {
             isSentByMe: {
-              $cond: { if: { $eq: ["$sendBy", new mongoose.Types.ObjectId(userId)] }, then: true, else: false }
+              $cond: {
+                if: { $eq: ["$sendBy", new mongoose.Types.ObjectId(userId)] },
+                then: true,
+                else: false
+              }
+            },
+            isReply: {
+              $cond: {
+                if: { $and: [{ $ne: [{ $ifNull: ["$replyTo", null] }, null] }, { $ne: [{ $ifNull: ["$replyTo", ""] }, ""] }] },
+                then: true,
+                else: false
+              }
             }
           }
         },
@@ -53,7 +64,24 @@ export async function POST(req) {
           }
         },
         {
+          $lookup: {
+            from: "messages",
+            localField: "replyTo",
+            foreignField: "_id",
+            as: "replyMessage",
+            pipeline: [
+              { $project: { text: 1, _id: 0 } }
+            ]
+          }
+        },
+        {
           $unwind: "$userDetails"
+        },
+        {
+          $unwind: {
+            path: "$replyMessage",
+            preserveNullAndEmptyArrays: true
+          }
         },
         {
           $match: {
@@ -62,6 +90,7 @@ export async function POST(req) {
         },
         {
           $project: {
+            _id: 1,
             text: 1,
             image: 1,
             voice: 1,
@@ -69,16 +98,26 @@ export async function POST(req) {
             file: 1,
             isSentByMe: 1,
             isSystemMessage: 1,
+            isReply: 1,
+            replyText: {
+              $cond: {
+                if: { $and: [{ $ne: [{ $ifNull: ["$replyTo", null] }, null] }, { $ne: [{ $ifNull: ["$replyTo", ""] }, ""] }] },
+                then: "$replyMessage.text",
+                else: ""
+              }
+            },
             username: "$userDetails.username",
             createdAt: 1
           }
         }
       ]);
-
-    if(!messages){
-        return new ApiResponse("No messages found", null, false, 400);
-    }
-
-    return new ApiResponse("Messages found successfully", messages, true, 200);
+      
+      
+  
+  if (!messages) {
+      return new ApiResponse("No messages found", null, false, 400);
+  }
+  
+  return new ApiResponse("Messages found successfully", messages, true, 200);  
 
 }

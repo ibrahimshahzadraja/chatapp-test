@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { socket } from '@/socket';
 import { saveAs } from 'file-saver';
 import AdminBoard from '@/app/components/AdminBoard';
+import ReplyIcon from '@mui/icons-material/Reply';
 
 let typingTimeout;
 
@@ -22,8 +23,7 @@ export default function Chat() {
 	const [addUser, setAddUser] = useState("");
 	const [showAdminBoard, setShowAdminBoard] = useState(false);
 	const [isRecording, setIsRecording] = useState(false);
-	const [audioBlob, setAudioBlob] = useState(null);
-	const [audioURL, setAudioURL] = useState(null);
+	const [replyId, setReplyId] = useState("");
 
 	const mediaRecorderRef = useRef(null);
 	const audioChunksRef = useRef([]);
@@ -137,7 +137,8 @@ export default function Chat() {
             },
             body: JSON.stringify({
                 text: msg,
-                chatname
+                chatname,
+				replyId,
             })
         });
         const data = await res.json();
@@ -571,11 +572,19 @@ export default function Chat() {
 				{messages.map((message, index) => (
 					<div key={index} className={`${message.isSystemMessage ? 'bg-gray-900' : message.isSentByMe ? "bg-green-400" : "bg-gray-700"} text-white min-w-28 w-fit max-w-[80%] ${message.isSystemMessage ? 'mx-auto' : message.isSentByMe ? "ml-auto" : "mr-auto"} rounded-md py-2 px-3 my-2 mx-2 relative`}>
 						{message.image.imageUrl && <img src={message.image.imageUrl} alt={message.image.imageName} className="w-[350px] h-[200px]" />}
-						{message.text && !message.isSystemMessage && <div>
+						{message.text && !message.isSystemMessage && !message.isReply && <div>
+											<ReplyIcon className='text-white absolute top-0 right-0 w-4 cursor-pointer' onClick={() => setReplyId(message._id)}></ReplyIcon>
 											<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
 											<div className='sm:my-4 my-3 sm:text-lg text-base font-sans sm:font-medium break-words'>{message.text}</div>
 											<div className='text-xs absolute bottom-0 right-0 m-1'>{new Date(message.createdAt).toLocaleTimeString('en-US', {hour: 'numeric',minute: 'numeric',hour12: true})}</div>
 										</div>}
+						{message.isReply && <div>
+											<ReplyIcon className='text-white absolute top-0 right-0 w-4 cursor-pointer' onClick={() => setReplyId(message._id)}></ReplyIcon>
+											<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
+											<div className='sm:mt-5 mt-4 px-2 rounded-md sm:text-lg bg-green-600 text-base font-sans sm:font-medium break-words'>{message.replyText}</div>
+											<div className='sm:text-lg mb-3 text-base font-sans sm:font-medium break-words'>{message.text}</div>
+											<div className='text-xs absolute bottom-0 right-0 m-1'>{new Date(message.createdAt).toLocaleTimeString('en-US', {hour: 'numeric',minute: 'numeric',hour12: true})}</div>
+										</div> }
 						{message.isSystemMessage && <div className='text-gray-300 text-sm'>{message.text}</div> }
 						{message.voice && <audio controls className='max-sm:w-[60vw]'>
 												<source src={message.voice} type='audio/mp3' />
