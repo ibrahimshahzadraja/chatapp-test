@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const messageSchema = new mongoose.Schema({
+    id: {
+        type: String,
+        required: true,
+    },
     text: {
         type: String,
         default: ""
@@ -44,8 +48,12 @@ const messageSchema = new mongoose.Schema({
         default: false
     },
     replyTo: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Message",
+        type: String,
+        default: "",
+    },
+    replyUsername: {
+        type: String,
+        default: "",
     },
     sendTo: {
         type: mongoose.Schema.Types.ObjectId,

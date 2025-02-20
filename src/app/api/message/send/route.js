@@ -15,7 +15,7 @@ export async function POST(req) {
 
     await dbConnect();
 
-    const { text, chatname, replyId } = await req.json();
+    const { text, chatname, replyId, id, replyUsername } = await req.json();
 
     if(!text){
         return new ApiResponse("Message body is required", null, false, 400);
@@ -25,19 +25,26 @@ export async function POST(req) {
         return new ApiResponse("Chatname is required", null, false, 400);
     }
 
+    if(!id){
+        return new ApiResponse("Message id is required", null, false, 400);
+    }
+
     const chat = await Chat.findOne({chatname});
 
     let message;
 
     if(replyId){
         message = new Message({
+            id,
             text,
-            replyTo: new mongoose.Types.ObjectId(replyId),
+            replyTo: replyId,
+            replyUsername,
             sendTo: chat._id,
             sendBy: new mongoose.Types.ObjectId(userId)
         });
     } else{
         message = new Message({
+            id,
             text,
             sendTo: chat._id,
             sendBy: new mongoose.Types.ObjectId(userId)

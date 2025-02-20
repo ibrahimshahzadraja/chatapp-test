@@ -5,6 +5,7 @@ import { socket } from '@/socket';
 import { saveAs } from 'file-saver';
 import AdminBoard from '@/app/components/AdminBoard';
 import ReplyIcon from '@mui/icons-material/Reply';
+import { v4 as uuidv4 } from 'uuid';
 
 let typingTimeout;
 
@@ -23,7 +24,7 @@ export default function Chat() {
 	const [addUser, setAddUser] = useState("");
 	const [showAdminBoard, setShowAdminBoard] = useState(false);
 	const [isRecording, setIsRecording] = useState(false);
-	const [replyId, setReplyId] = useState("");
+	const [reply, setReply] = useState({replyId: "", replyUsername: "", replyText: ""});
 
 	const mediaRecorderRef = useRef(null);
 	const audioChunksRef = useRef([]);
@@ -125,10 +126,13 @@ export default function Chat() {
     async function sendMessage() {
 		if(!msg) return;
 
-        socket.emit("sendMessage", { chatname, username: userName ,message: msg });
-		setMessages(m => [...m, {text: msg, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
+		const messageId = uuidv4();
+
+        socket.emit("sendMessage", { chatname, username: userName ,message: msg, isReply: reply.replyId ? true : false, messageId, replyText: reply.replyText, replyUsername: reply.replyUsername});
+		setMessages(m => [...m, {id: messageId, replyUsername: reply.replyUsername, text: msg, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username: userName, isSentByMe: true,isReply: reply.replyId ? true : false, replyText: reply.replyText ? reply.replyText : "", createdAt: new Date().toISOString()}])
 
 		setMsg("");
+		setReply({replyId: "", replyUsername: "", replyText: ""});
         
         const res = await fetch("/api/message/send", {
             method: "POST",
@@ -138,7 +142,9 @@ export default function Chat() {
             body: JSON.stringify({
                 text: msg,
                 chatname,
-				replyId,
+				replyId: reply.replyId,
+				replyUsername: reply.replyUsername,
+				id: messageId,
             })
         });
         const data = await res.json();
@@ -456,9 +462,9 @@ export default function Chat() {
 				setMessages(m => [...m, {text: `${username} left the chat`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
-			socket.on("message", (username, message) => {
+			socket.on("message", (username, message, isReply, messageId, replyText, replyUsername) => {
 				console.log('Received message:', message);
-				setMessages(m => [...m, {text: message, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {id: messageId, replyUsername, text: message, isReply, replyText, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
 			socket.on('receiveImage', (username, image, imageName) => {
@@ -570,18 +576,21 @@ export default function Chat() {
 			</div> }
 			<div className={`w-full h-[70vh] bg-gray-200 overflow-y-auto bg-cover bg-center`} style={{backgroundImage: chatDetails.backgroundImage ? `url(${chatDetails.backgroundImage})` : 'none',}} ref={scrollRef}>
 				{messages.map((message, index) => (
-					<div key={index} className={`${message.isSystemMessage ? 'bg-gray-900' : message.isSentByMe ? "bg-green-400" : "bg-gray-700"} text-white min-w-28 w-fit max-w-[80%] ${message.isSystemMessage ? 'mx-auto' : message.isSentByMe ? "ml-auto" : "mr-auto"} rounded-md py-2 px-3 my-2 mx-2 relative`}>
+					<div key={index} className={`${message.isSystemMessage ? 'bg-gray-900' : message.isSentByMe ? "bg-green-400" : "bg-gray-700"} text-white min-w-44 w-fit max-w-[80%] ${message.isSystemMessage ? 'mx-auto' : message.isSentByMe ? "ml-auto" : "mr-auto"} rounded-md py-2 px-3 my-2 mx-2 relative`}>
 						{message.image.imageUrl && <img src={message.image.imageUrl} alt={message.image.imageName} className="w-[350px] h-[200px]" />}
 						{message.text && !message.isSystemMessage && !message.isReply && <div>
-											<ReplyIcon className='text-white absolute top-0 right-0 w-4 cursor-pointer' onClick={() => setReplyId(message._id)}></ReplyIcon>
+											<ReplyIcon className='text-white absolute top-0 right-0 w-4 cursor-pointer' onClick={() => setReply(p => ({replyId: message.id, replyUsername: message.username, replyText: message.text}))}></ReplyIcon>
 											<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
 											<div className='sm:my-4 my-3 sm:text-lg text-base font-sans sm:font-medium break-words'>{message.text}</div>
 											<div className='text-xs absolute bottom-0 right-0 m-1'>{new Date(message.createdAt).toLocaleTimeString('en-US', {hour: 'numeric',minute: 'numeric',hour12: true})}</div>
 										</div>}
 						{message.isReply && <div>
-											<ReplyIcon className='text-white absolute top-0 right-0 w-4 cursor-pointer' onClick={() => setReplyId(message._id)}></ReplyIcon>
+											<ReplyIcon className='text-white absolute top-0 right-0 w-4 cursor-pointer' onClick={() => setReply(p => ({replyId: message.id, replyUsername: message.username, replyText: message.text}))}></ReplyIcon>
 											<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
-											<div className='sm:mt-5 mt-4 px-2 rounded-md sm:text-lg bg-green-600 text-base font-sans sm:font-medium break-words'>{message.replyText}</div>
+											<div className={`${message.isSentByMe ? "bg-green-600" : "bg-gray-800"} sm:mt-5 mt-4 px-2 py-5 rounded-md sm:text-lg text-base font-sans sm:font-medium break-words relative`}>
+												<div className='absolute top-0 left-0 text-[10px] px-1'>{message.replyUsername}</div>
+												<div>{message.replyText}</div>
+											</div>
 											<div className='sm:text-lg mb-3 text-base font-sans sm:font-medium break-words'>{message.text}</div>
 											<div className='text-xs absolute bottom-0 right-0 m-1'>{new Date(message.createdAt).toLocaleTimeString('en-US', {hour: 'numeric',minute: 'numeric',hour12: true})}</div>
 										</div> }
