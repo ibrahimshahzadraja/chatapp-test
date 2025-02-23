@@ -13,7 +13,7 @@ export default function Chat() {
   const router = useRouter();
 
     useEffect(() => {
-        async function auth(){
+        async function getUsername(){
             const res = await fetch("/api/users/getUser", {
                 method: "GET",
                 headers: {
@@ -21,25 +21,12 @@ export default function Chat() {
                 },
             });
             const data = await res.json();
-            console.log(data);
-            if(!data.success){
-                const res = await fetch("/api/users/tokenRefresh", {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                });
-                const data = await res.json();
-                if(!data.success){
-                    router.push("/login");
-                } else{
-                    setUsername(data.data);
-                }
-            } else{
+
+            if(data.success){
                 setUsername(data.data);
             }
         }
-        auth();
+        getUsername();
 
     }, []);
 
@@ -49,7 +36,7 @@ export default function Chat() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({chatname, text}),
+        body: JSON.stringify({chatname, text, id: "NULL"}),
       });
   
       const data = await response.json();

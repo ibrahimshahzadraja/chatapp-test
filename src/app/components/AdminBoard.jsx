@@ -11,7 +11,7 @@ export default function AdminBoard({chatname, usernames, banned, setShowAdminBoa
 			headers: {
 			  'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({chatname, text}),
+			body: JSON.stringify({chatname, text, id:"NULL"}),
 		});
 
 		const data = await response.json();

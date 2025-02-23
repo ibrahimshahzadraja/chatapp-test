@@ -235,7 +235,7 @@ export default function Chat() {
 			headers: {
 			  'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({chatname, text}),
+			body: JSON.stringify({chatname, text, id: "NULL"}),
 		});
 
 		const data = await response.json();
@@ -364,35 +364,6 @@ export default function Chat() {
 			socket.emit("send-video", {username: userName, chatname, videoUrl: data.data.fileUrl, videoName: data.data.fileName});
 		}
 	}
-	  
-
-    useEffect(() => {
-        async function auth(){
-            const res = await fetch("/api/users/getUser", {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-            });
-            const data = await res.json();
-            console.log(data);
-            if(!data.success){
-                const res = await fetch("/api/users/tokenRefresh", {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                });
-                const data = await res.json();
-                if(!data.success){
-                    router.push("/login");
-                }
-                console.log(data);
-            }
-        }
-        auth();
-
-    }, [])
 
 	useEffect(() => {
 		async function getUser() {
@@ -608,7 +579,7 @@ export default function Chat() {
 			</div>
 		    <div className="flex flex-col gap-4 my-4">
 			<div className="flex gap-2">
-				<input type="text" placeholder="Enter message" onKeyDown={handleTyping} className="border border-gray-300 rounded-md px-4 py-2 w-full" value={msg} onChange={(e) => setMsg(e.target.value)}/>
+				<input type="text" placeholder="Enter message" onKeyDown={handleTyping} className="border text-black border-gray-300 rounded-md px-4 py-2 w-full" value={msg} onChange={(e) => setMsg(e.target.value)}/>
 				<button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300" onClick={sendMessage}>Send</button>
 			</div>
 			

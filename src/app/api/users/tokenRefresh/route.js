@@ -1,42 +1,54 @@
 import User from "@/models/User";
 import { generateAccessAndRefreshToken } from "@/utils/generateTokens";
-import ApiResponse from "@/helpers/ApiResponse";
 import jwt from "jsonwebtoken";
 import { dbConnect } from "@/dbConfig/dbConfig";
+import { NextResponse } from 'next/server';
 
-export async function GET(req){
+export async function GET(req) {
     await dbConnect();
-    const token = await req.cookies.get('refreshToken')?.value;
 
-    if(!token){
-        return new ApiResponse("Refresh token is required", null, false, 400);
+    const token = req.headers.get('authorization')?.split(' ')[1];
+    if (!token) {
+        return NextResponse.json({ message: "Refresh token is required", success: false }, { status: 400 });
     }
 
-    const decodedToken = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+    try {
+        const decodedToken = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+        const user = await User.findById(decodedToken?._id);
+        
+        if (!user) {
+            return NextResponse.json({ message: "User not found", success: false }, { status: 404 });
+        }
 
-    const user = await User.findById(decodedToken?._id);
+        const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
-    if(!user){
-        return new ApiResponse("User not found", null, false, 404);
+        const response = NextResponse.json({
+            message: "Token refreshed successfully", 
+            success: true, 
+            accessToken,
+            refreshToken
+        }, { status: 200 });
+
+        response.cookies.set('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            sameSite: 'strict',
+            maxAge: 3 * 24 * 60 * 60 * 1000 // 3 days
+        });
+
+        response.cookies.set('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            sameSite: 'strict',
+            maxAge: 365 * 24 * 60 * 60 * 1000 // 1 year
+        });
+
+        return response;
+
+    } catch (error) {
+        console.error("Token verification failed", error);
+        return NextResponse.json({ message: "Invalid refresh token", success: false }, { status: 401 });
     }
-    const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id)
-
-    const response = new ApiResponse("Token refreshed successfully", user.username, true, 200);
-    response.cookies.set('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        sameSite: 'strict',
-        maxAge: 3 * 24 * 60 * 60 * 1000
-    });
-    
-    response.cookies.set('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    sameSite: 'strict',
-    maxAge: 365 * 24 * 60 * 60 * 1000
-    });
-
-    return response;
 }
