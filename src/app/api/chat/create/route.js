@@ -2,6 +2,7 @@ import Chat from "@/models/Chat";
 import ApiResponse from "@/helpers/ApiResponse";
 import { dbConnect } from "@/dbConfig/dbConfig";
 import auth from "@/helpers/auth";
+import { uploadOnCloudinary } from "@/lib/uploadOnCloudinary";
 
 export async function POST(req) {
     
@@ -28,8 +29,8 @@ export async function POST(req) {
     }
 
     let url = "/images/default-icon.jpeg";
-    if(profilePicture){
-        url = await uploadOnCloudinary(profilePicture);
+    if(profilePicture.size){
+        url = await uploadOnCloudinary(profilePicture, 'image');
 
         if(!url) {
             return new ApiResponse("Error uploading image", null, false, 500);
