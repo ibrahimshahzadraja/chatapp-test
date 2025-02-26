@@ -544,7 +544,7 @@ export default function Chat() {
 				<img src={chatDetails.profilePicture} alt="Chat Profile" className='w-16 h-16 rounded-full border-2 border-black' />
 				<div>
 					<h1 className='font-semibold text-xl'>{chatname}</h1>
-					<p className='text-[#00FF85]'>You, {chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ").length > 20 ? chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ").split(0, 20) + "..." : chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ")}</p>
+					<p className='text-[#00FF85]'>You, {chatDetails.memberUsernames?.push(chatDetails.ownerUsername).filter(uname => uname !== userName).join(", ").length > 20 ? chatDetails.memberUsernames?.push(chatDetails.ownerUsername).filter(uname => uname !== userName).join(", ").split(0, 20) + "..." : chatDetails.memberUsernames?.push(chatDetails.ownerUsername).filter(uname => uname !== userName).join(", ")}</p>
 				</div>
 			</div>
 			{isOwner && <FaPencil className='absolute right-0 mr-4' />}
