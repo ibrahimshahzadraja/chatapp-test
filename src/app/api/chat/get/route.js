@@ -56,7 +56,12 @@ export async function POST(req) {
           profilePicture: 1,
           backgroundImage: 1,
           "ownerUsername": { $arrayElemAt: ["$ownerDetails.username", 0] },
-          "memberUsernames": "$memberDetails.username",
+          memberUsernames: {
+            $concatArrays: [
+              [{ $arrayElemAt: ["$ownerDetails.username", 0] }],
+              "$memberDetails.username"
+            ]
+          },
           "bannedUsernames": "$bannedDetails.username"
         }
       }

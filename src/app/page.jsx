@@ -67,8 +67,8 @@ export default function ChatPage() {
                         })
                     }
                 </div>
-                <Options page={"home"} />
             </div>
+            <Options page={"home"} />
         </>
     );
 }
