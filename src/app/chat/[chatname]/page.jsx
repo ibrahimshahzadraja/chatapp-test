@@ -536,15 +536,15 @@ export default function Chat() {
 
 	return (
 		<>
-		<div className='w-full flex items-center bg-[#1F1F1F] gap-4 p-2 sticky top-0 z-10'>
+		<div className='w-full flex items-center bg-[#1F1F1F] sm:gap-4 gap-2 p-2 sticky top-0 z-10'>
 			<Link href={'/'}>
-				<FaArrowLeft className='ml-4' />
+				<FaArrowLeft className='sm:ml-4' />
 			</Link>
 			<div className='flex items-center gap-4 w-[80%]'>
 				<img src={chatDetails.profilePicture} alt="Chat Profile" className='w-16 h-16 rounded-full border-2 border-black' />
 				<div>
 					<h1 className='font-semibold text-xl'>{chatname}</h1>
-					<p className='text-[#00FF85]'>You, {chatDetails.memberUsernames?.join(", ").length > 20 ? chatDetails.memberUsernames?.join(", ").split(0, 20) + "..." : chatDetails.memberUsernames?.join(", ")}</p>
+					<p className='text-[#00FF85]'>You, {chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ").length > 20 ? chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ").split(0, 20) + "..." : chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ")}</p>
 				</div>
 			</div>
 			{isOwner && <FaPencil className='absolute right-0 mr-4' />}
@@ -601,7 +601,7 @@ export default function Chat() {
 			<div className='w-full flex items-center bg-[#1F1F1F] gap-4 py-4 justify-center sticky bottom-0'>
 				<IoIosAttach className='text-[#7C01F6] w-8 h-8 cursor-pointer' />
 				<div className='relative'>
-					<input type="text" placeholder='Type your message' onKeyDown={handleTyping} value={msg} onChange={(e) => setMsg(e.target.value)} className='bg-[#272626] rounded-md text-base px-4 py-2 outline-none' />
+					<input type="text" placeholder='Type your message' onKeyDown={handleTyping} value={msg} onChange={(e) => setMsg(e.target.value)} className='bg-[#272626] rounded-md text-base pl-4 pr-8 py-2 outline-none' />
 					<FaCamera className='text-[#7C01F6] absolute right-2 top-3 cursor-pointer' />
 				</div>
 				{!msg && <MdKeyboardVoice className='text-[#7C01F6] w-8 h-8 cursor-pointer' />}
