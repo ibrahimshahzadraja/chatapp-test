@@ -6,6 +6,13 @@ import { saveAs } from 'file-saver';
 import AdminBoard from '@/app/components/AdminBoard';
 import ReplyIcon from '@mui/icons-material/Reply';
 import { v4 as uuidv4 } from 'uuid';
+import { FaArrowLeft } from "react-icons/fa6";
+import { FaPencil } from "react-icons/fa6";
+import Link from 'next/link';
+import { IoIosAttach } from "react-icons/io";
+import { MdKeyboardVoice } from "react-icons/md";
+import { FaCamera } from "react-icons/fa";
+import { BsFillSendFill } from "react-icons/bs";
 
 let typingTimeout;
 
@@ -503,7 +510,7 @@ export default function Chat() {
 		if (scrollRef.current) {
 			scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
 		  }
-	})
+	});
 
 	const handleTyping = () => {
 		socket.emit('user-typing', chatname);
@@ -529,7 +536,21 @@ export default function Chat() {
 
 	return (
 		<>
-		<button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={() => setShowAdminBoard(a => !a)}>Show Admin Board</button>
+		<div className='w-full flex items-center bg-[#1F1F1F] gap-4 p-2 sticky top-0 z-10'>
+			<Link href={'/'}>
+				<FaArrowLeft className='ml-4' />
+			</Link>
+			<div className='flex items-center gap-4 w-[80%]'>
+				<img src={chatDetails.profilePicture} alt="Chat Profile" className='w-16 h-16 rounded-full border-2 border-black' />
+				<div>
+					<h1 className='font-semibold text-xl'>{chatname}</h1>
+					<p className='text-[#00FF85]'>You, {chatDetails.memberUsernames?.join(", ").length > 20 ? chatDetails.memberUsernames?.join(", ").split(0, 20) + "..." : chatDetails.memberUsernames?.join(", ")}</p>
+				</div>
+			</div>
+			{isOwner && <FaPencil className='absolute right-0 mr-4' />}
+		</div>
+
+		{/* <button className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white" onClick={() => setShowAdminBoard(a => !a)}>Show Admin Board</button>
 		{showAdminBoard && chatDetails.memberUsernames && isOwner && <AdminBoard setShowAdminBoard={setShowAdminBoard} chatname={chatname} usernames={chatDetails.memberUsernames} banned={chatDetails.bannedUsernames} />}
 		  <div className='flex items-center'>
 			<img src={chatDetails.profilePicture} alt="Chat Profile" className='w-20 h-20 rounded-full border-2 border-black' />
@@ -544,8 +565,8 @@ export default function Chat() {
 			{isOwner && <div>
 				<label>Background Image:</label>
 				<input type="file" accept='image/*' onChange={setBackgroundImage} ref={backgroundImageRef} />	
-			</div> }
-			<div className={`w-full h-[70vh] bg-gray-200 overflow-y-auto bg-cover bg-center`} style={{backgroundImage: chatDetails.backgroundImage ? `url(${chatDetails.backgroundImage})` : 'none',}} ref={scrollRef}>
+			</div> } */}
+			<div className={`w-full overflow-y-auto bg-cover bg-center`} style={{backgroundImage: chatDetails.backgroundImage ? `url(${chatDetails.backgroundImage})` : 'none',}} ref={scrollRef}>
 				{messages.map((message, index) => (
 					<div key={index} className={`${message.isSystemMessage ? 'bg-gray-900' : message.isSentByMe ? "bg-green-400" : "bg-gray-700"} text-white min-w-44 w-fit max-w-[80%] ${message.isSystemMessage ? 'mx-auto' : message.isSentByMe ? "ml-auto" : "mr-auto"} rounded-md py-2 px-3 my-2 mx-2 relative`}>
 						{message.image.imageUrl && <img src={message.image.imageUrl} alt={message.image.imageName} className="w-[350px] h-[200px]" />}
@@ -577,7 +598,16 @@ export default function Chat() {
 				))}
 				{isTyping && <p className='bg-gray-900 text-gray-300 px-3 py-2 my-2 mx-2 rounded-md w-fit'>User is typing...</p>}
 			</div>
-		    <div className="flex flex-col gap-4 my-4">
+			<div className='w-full flex items-center bg-[#1F1F1F] gap-4 py-4 justify-center sticky bottom-0'>
+				<IoIosAttach className='text-[#7C01F6] w-8 h-8 cursor-pointer' />
+				<div className='relative'>
+					<input type="text" placeholder='Type your message' onKeyDown={handleTyping} value={msg} onChange={(e) => setMsg(e.target.value)} className='bg-[#272626] rounded-md text-base px-4 py-2 outline-none' />
+					<FaCamera className='text-[#7C01F6] absolute right-2 top-3 cursor-pointer' />
+				</div>
+				{!msg && <MdKeyboardVoice className='text-[#7C01F6] w-8 h-8 cursor-pointer' />}
+				{msg && <BsFillSendFill className='text-[#7C01F6] w-8 h-8 cursor-pointer' onClick={sendMessage} />}
+			</div>
+		    {/* <div className="flex flex-col gap-4 my-4">
 			<div className="flex gap-2">
 				<input type="text" placeholder="Enter message" onKeyDown={handleTyping} className="border text-black border-gray-300 rounded-md px-4 py-2 w-full" value={msg} onChange={(e) => setMsg(e.target.value)}/>
 				<button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300" onClick={sendMessage}>Send</button>
@@ -606,7 +636,7 @@ export default function Chat() {
 
 		{!isOwner ? (
 			<button className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300" onClick={leaveChat}>Leave chat {chatname}</button>
-			) : (<button className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300" onClick={deleteChat}>Delete chat {chatname}</button>)}
+			) : (<button className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300" onClick={deleteChat}>Delete chat {chatname}</button>)} */}
 		</>
 	  );
 	  
