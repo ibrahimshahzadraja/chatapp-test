@@ -19,6 +19,9 @@ export async function POST(req) {
     const formData = await req.formData();
     const file = formData.get('file');
     const chatname = formData.get('chatname');
+    const id = formData.get('id');
+    const replyId = formData.get('replyId');
+    const replyUsername = formData.get('replyUsername');
     const type = formData.get('type');
     let image = "", voice = "", fileUrl = "", video = "";
 
@@ -53,6 +56,9 @@ export async function POST(req) {
 
     if(type == "voice"){
         const message = new Message({
+            id,
+            replyTo: replyId,
+            replyUsername,
             voice,
             sendTo: chat._id,
             sendBy: new mongoose.Types.ObjectId(userId)
@@ -60,6 +66,9 @@ export async function POST(req) {
         await message.save();
     } else if(type == "video"){
         const message = new Message({
+            id,
+            replyTo: replyId,
+            replyUsername,
             video: {videoUrl: video, videoName: file.name},
             sendTo: chat._id,
             sendBy: new mongoose.Types.ObjectId(userId)
@@ -67,6 +76,9 @@ export async function POST(req) {
         await message.save();
     } else if(type == "file"){
         const message = new Message({
+            id,
+            replyTo: replyId,
+            replyUsername,
             file: {fileUrl, fileName: file.name},
             sendTo: chat._id,
             sendBy: new mongoose.Types.ObjectId(userId)
@@ -74,6 +86,9 @@ export async function POST(req) {
         await message.save();
     } else if(type == "image"){
         const message = new Message({
+            id,
+            replyTo: replyId,
+            replyUsername,
             image: {imageUrl: image, imageName: file.name},
             sendTo: chat._id,
             sendBy: new mongoose.Types.ObjectId(userId)

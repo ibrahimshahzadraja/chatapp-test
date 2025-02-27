@@ -70,7 +70,13 @@ export async function POST(req) {
           foreignField: "id",
           as: "replyMessage",
           pipeline: [
-            { $project: { text: 1, _id: 0 } }
+            { 
+              $project: { 
+                text: 1,
+                "image.imageUrl": 1,
+                _id: 0 
+              } 
+            }
           ]
         }
       },
@@ -104,6 +110,13 @@ export async function POST(req) {
             $cond: {
               if: { $ne: ["$replyTo", ""] },
               then: "$replyMessage.text",
+              else: ""
+            }
+          },
+          replyImage: {
+            $cond: {
+              if: { $ne: ["$replyTo", ""] },
+              then: "$replyMessage.image.imageUrl",
               else: ""
             }
           },

@@ -13,6 +13,7 @@ import { IoIosAttach } from "react-icons/io";
 import { MdKeyboardVoice } from "react-icons/md";
 import { FaCamera } from "react-icons/fa";
 import { BsFillSendFill } from "react-icons/bs";
+import FileSend from '@/app/components/FileSend';
 
 let typingTimeout;
 
@@ -31,7 +32,8 @@ export default function Chat() {
 	const [addUser, setAddUser] = useState("");
 	const [showAdminBoard, setShowAdminBoard] = useState(false);
 	const [isRecording, setIsRecording] = useState(false);
-	const [reply, setReply] = useState({replyId: "", replyUsername: "", replyText: ""});
+	const [reply, setReply] = useState({replyId: "", replyUsername: "", replyText: "", replyImage: "", replyVideo: "", replyAudio: "", replyFile: "" });
+	const [fileAttachClicked, setFileAttachClicked] = useState(false);
 
 	const mediaRecorderRef = useRef(null);
 	const audioChunksRef = useRef([]);
@@ -135,8 +137,8 @@ export default function Chat() {
 
 		const messageId = uuidv4();
 
-        socket.emit("sendMessage", { chatname, username: userName ,message: msg, isReply: reply.replyId ? true : false, messageId, replyText: reply.replyText, replyUsername: reply.replyUsername});
-		setMessages(m => [...m, {id: messageId, replyUsername: reply.replyUsername, text: msg, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username: userName, isSentByMe: true,isReply: reply.replyId ? true : false, replyText: reply.replyText ? reply.replyText : "", createdAt: new Date().toISOString()}])
+        socket.emit("sendMessage", { chatname, username: userName ,message: msg, isReply: reply.replyId ? true : false, messageId, replyText: reply.replyText, replyImage: reply.replyImage, replyUsername: reply.replyUsername});
+		setMessages(m => [...m, {id: messageId, replyUsername: reply.replyUsername, replyImage: reply.replyImage, text: msg, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username: userName, isSentByMe: true,isReply: reply.replyId ? true : false, replyText: reply.replyText ? reply.replyText : "", createdAt: new Date().toISOString()}])
 
 		setMsg("");
 		setReply({replyId: "", replyUsername: "", replyText: ""});
@@ -160,21 +162,28 @@ export default function Chat() {
 	async function sendImage(e) {
 		const file = e.target.files[0];
 		const reader = new FileReader();
+
+		setFileAttachClicked(false);
+		const messageId = uuidv4();
 	
 		reader.onloadend = () => {
 		  const base64Image = reader.result;
 		  setImage(base64Image);
-		  socket.emit('sendImage', {chatname, username: userName, image: base64Image});
-		  setMessages(m => [...m, {text: "", image: {imageUrl: base64Image, imageName: file.name},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
+		  socket.emit('sendImage', {chatname, username: userName, image: base64Image, imageName: file.name, isReply: reply.replyId ? true : false, messageId, replyText: reply.replyText, replyImage: reply.replyImage, replyUsername: reply.replyUsername});
+		  setMessages(m => [...m, {id: messageId, isReply: reply.replyId ? true : false, replyText: reply.replyText, replyImage: reply.replyImage, replyUsername: reply.replyUsername, text: "", image: {imageUrl: base64Image, imageName: file.name},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
 		};
 	
 		if (file) {
 		  reader.readAsDataURL(file);
 		}
 
+
 		const formData = new FormData()
 		formData.append('file', file);
 		formData.append('chatname', chatname);
+		formData.append('id', messageId);
+		formData.append('replyId', reply.replyId);
+		formData.append("replyUsername", reply.replyUsername);
 		formData.append('type', "image");
 
         const response = await fetch("/api/message/sendMedia", {
@@ -333,6 +342,7 @@ export default function Chat() {
 		formData.append('file', file);
 		formData.append('chatname', chatname);
 		formData.append('type', "file");
+		setFileAttachClicked(false);
 
 		
         const response = await fetch("/api/message/sendMedia", {
@@ -356,6 +366,7 @@ export default function Chat() {
 		formData.append('file', file);
 		formData.append('chatname', chatname);
 		formData.append('type', "video");
+		setFileAttachClicked(false);
 
 		
         const response = await fetch("/api/message/sendMedia", {
@@ -440,13 +451,13 @@ export default function Chat() {
 				setMessages(m => [...m, {text: `${username} left the chat`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
-			socket.on("message", (username, message, isReply, messageId, replyText, replyUsername) => {
+			socket.on("message", (username, message, isReply, messageId, replyText, replyImage, replyUsername) => {
 				console.log('Received message:', message);
-				setMessages(m => [...m, {id: messageId, replyUsername, text: message, isReply, replyText, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setMessages(m => [...m, {id: messageId, replyUsername, text: message, isReply, replyText, replyImage, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
-			socket.on('receiveImage', (username, image, imageName) => {
-				setMessages(m => [...m, {text: "", image: {imageUrl: image, imageName},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+			socket.on('receiveImage', (username, image, imageName, isReply, messageId, replyText, replyUsername) => {
+				setMessages(m => [...m, {id: messageId, isReply, replyUsername, replyText, text: "", image: {imageUrl: image, imageName},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
 			socket.on("roomDeleted", (message) => {
@@ -569,21 +580,36 @@ export default function Chat() {
 			<div className={`w-full overflow-y-auto bg-cover bg-center`} style={{backgroundImage: chatDetails.backgroundImage ? `url(${chatDetails.backgroundImage})` : 'none',}} ref={scrollRef}>
 				{messages.map((message, index) => (
 					<div key={index} className={`${message.isSystemMessage ? 'bg-gray-900' : message.isSentByMe ? "bg-green-400" : "bg-gray-700"} text-white min-w-44 w-fit max-w-[80%] ${message.isSystemMessage ? 'mx-auto' : message.isSentByMe ? "ml-auto" : "mr-auto"} rounded-md py-2 px-3 my-2 mx-2 relative`}>
-						{message.image.imageUrl && <img src={message.image.imageUrl} alt={message.image.imageName} className="w-[350px] h-[200px]" />}
+						{message.image.imageUrl && !message.isReply && <div>
+									<ReplyIcon className='text-white absolute top-0 right-0 w-4 cursor-pointer' onClick={() => setReply(p => ({...p, replyId: message.id, replyUsername: message.username, replyImage: message.image.imageUrl}))}></ReplyIcon>
+									<img src={message.image.imageUrl} alt={message.image.imageName} className="w-[350px] h-[200px] m-2" />
+								</div>}
 						{message.text && !message.isSystemMessage && !message.isReply && <div>
-											<ReplyIcon className='text-white absolute top-0 right-0 w-4 cursor-pointer' onClick={() => setReply(p => ({replyId: message.id, replyUsername: message.username, replyText: message.text}))}></ReplyIcon>
+											<ReplyIcon className='text-white absolute top-0 right-0 w-4 cursor-pointer' onClick={() => setReply(p => ({...p, replyId: message.id, replyUsername: message.username, replyText: message.text}))}></ReplyIcon>
 											<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
 											<div className='sm:my-4 my-3 sm:text-lg text-base font-sans sm:font-medium break-words'>{message.text}</div>
 											<div className='text-xs absolute bottom-0 right-0 m-1'>{new Date(message.createdAt).toLocaleTimeString('en-US', {hour: 'numeric',minute: 'numeric',hour12: true})}</div>
 										</div>}
-						{message.isReply && <div>
-											<ReplyIcon className='text-white absolute top-0 right-0 w-4 cursor-pointer' onClick={() => setReply(p => ({replyId: message.id, replyUsername: message.username, replyText: message.text}))}></ReplyIcon>
+						{message.isReply && message.text && <div>
+											<ReplyIcon className='text-white absolute top-0 right-0 w-4 cursor-pointer' onClick={() => setReply(p => ({...p, replyId: message.id, replyUsername: message.username, replyText: message.text}))}></ReplyIcon>
 											<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
 											<div className={`${message.isSentByMe ? "bg-green-600" : "bg-gray-800"} sm:mt-5 mt-4 px-2 py-5 rounded-md sm:text-lg text-base font-sans sm:font-medium break-words relative`}>
 												<div className='absolute top-0 left-0 text-[10px] px-1'>{message.replyUsername}</div>
-												<div>{message.replyText}</div>
+												{message.replyText && <div>{message.replyText}</div>}
+												{message.replyImage && <img src={message.replyImage} alt='Image' className='w-30 h-20 m-1' /> }
 											</div>
 											<div className='sm:text-lg mb-3 text-base font-sans sm:font-medium break-words'>{message.text}</div>
+											<div className='text-xs absolute bottom-0 right-0 m-1'>{new Date(message.createdAt).toLocaleTimeString('en-US', {hour: 'numeric',minute: 'numeric',hour12: true})}</div>
+										</div> }
+						{message.isReply && message.image.imageUrl && <div>
+											<ReplyIcon className='text-white absolute top-0 right-0 w-4 cursor-pointer' onClick={() => setReply(p => ({...p, replyId: message.id, replyUsername: message.username, replyImage: message.image.imageUrl}))}></ReplyIcon>
+											<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
+											<div className={`${message.isSentByMe ? "bg-green-600" : "bg-gray-800"} sm:mt-5 mt-4 px-2 py-5 rounded-md sm:text-lg text-base font-sans sm:font-medium break-words relative`}>
+												<div className='absolute top-0 left-0 text-[10px] px-1'>{message.replyUsername}</div>
+												{message.replyText && <div>{message.replyText}</div>}
+												{message.replyImage && <img src={message.replyImage} alt='Image' className='w-30 h-20 m-1' /> }
+											</div>
+											<img src={message.image.imageUrl} alt={message.image.imageName} className="w-[350px] h-[200px] m-2" />
 											<div className='text-xs absolute bottom-0 right-0 m-1'>{new Date(message.createdAt).toLocaleTimeString('en-US', {hour: 'numeric',minute: 'numeric',hour12: true})}</div>
 										</div> }
 						{message.isSystemMessage && <div className='text-gray-300 text-sm'>{message.text}</div> }
@@ -598,14 +624,17 @@ export default function Chat() {
 				))}
 				{isTyping && <p className='bg-gray-900 text-gray-300 px-3 py-2 my-2 mx-2 rounded-md w-fit'>User is typing...</p>}
 			</div>
-			<div className='w-full flex items-center bg-[#1F1F1F] gap-4 py-4 justify-center sticky bottom-0'>
-				<IoIosAttach className='text-[#7C01F6] w-8 h-8 cursor-pointer' />
-				<div className='relative'>
-					<input type="text" placeholder='Type your message' onKeyDown={handleTyping} value={msg} onChange={(e) => setMsg(e.target.value)} className='bg-[#272626] rounded-md text-base pl-4 pr-8 py-2 outline-none' />
-					<FaCamera className='text-[#7C01F6] absolute right-2 top-3 cursor-pointer' />
+			<div className="sticky bottom-0">
+				<div className='w-full flex items-center bg-[#1F1F1F] gap-4 py-4 justify-center relative'>
+					<FileSend onImageSelect={sendImage} onVideoSelect={sendVideo} onFileSelect={sendFile} isVisible={fileAttachClicked} />
+					<IoIosAttach className='text-[#7C01F6] w-8 h-8 cursor-pointer' onClick={() => setFileAttachClicked(f => !f)} />
+					<div className='relative'>
+						<input type="text" placeholder='Type your message' onKeyDown={handleTyping} value={msg} onChange={(e) => setMsg(e.target.value)} className='bg-[#272626] rounded-md text-base pl-4 pr-8 py-2 outline-none' />
+						<FaCamera className='text-[#7C01F6] absolute right-2 top-3 cursor-pointer' />
+					</div>
+					{!msg && <MdKeyboardVoice className='text-[#7C01F6] w-8 h-8 cursor-pointer' />}
+					{msg && <BsFillSendFill className='text-[#7C01F6] w-8 h-8 cursor-pointer' onClick={sendMessage} />}
 				</div>
-				{!msg && <MdKeyboardVoice className='text-[#7C01F6] w-8 h-8 cursor-pointer' />}
-				{msg && <BsFillSendFill className='text-[#7C01F6] w-8 h-8 cursor-pointer' onClick={sendMessage} />}
 			</div>
 		    {/* <div className="flex flex-col gap-4 my-4">
 			<div className="flex gap-2">
