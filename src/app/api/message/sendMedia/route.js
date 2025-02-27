@@ -36,6 +36,10 @@ export async function POST(req) {
     if(!chatname){
         return new ApiResponse("Chatname is required", null, false, 400);
     }
+    
+    if(!id){
+        return new ApiResponse("Message Id is missing", null, false, 400);
+    }
 
     if(type == "image"){
         image = await uploadOnCloudinary(file, type);

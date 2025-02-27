@@ -74,6 +74,7 @@ export async function POST(req) {
               $project: { 
                 text: 1,
                 "image.imageUrl": 1,
+                "video.videoUrl": 1,
                 _id: 0 
               } 
             }
@@ -117,6 +118,13 @@ export async function POST(req) {
             $cond: {
               if: { $ne: ["$replyTo", ""] },
               then: "$replyMessage.image.imageUrl",
+              else: ""
+            }
+          },
+          replyVideo: {
+            $cond: {
+              if: { $ne: ["$replyTo", ""] },
+              then: "$replyMessage.video.videoUrl",
               else: ""
             }
           },
