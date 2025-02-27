@@ -141,7 +141,7 @@ export default function Chat() {
 		setMessages(m => [...m, {id: messageId, replyUsername: reply.replyUsername, replyImage: reply.replyImage, text: msg, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username: userName, isSentByMe: true,isReply: reply.replyId ? true : false, replyText: reply.replyText ? reply.replyText : "", createdAt: new Date().toISOString()}])
 
 		setMsg("");
-		setReply({replyId: "", replyUsername: "", replyText: ""});
+		setReply({replyId: "", replyUsername: "", replyText: "", replyImage: "", replyVideo: "", replyAudio: "", replyFile: "" });
         
         const res = await fetch("/api/message/send", {
             method: "POST",
@@ -185,6 +185,8 @@ export default function Chat() {
 		formData.append('replyId', reply.replyId);
 		formData.append("replyUsername", reply.replyUsername);
 		formData.append('type', "image");
+
+		setReply({replyId: "", replyUsername: "", replyText: "", replyImage: "", replyVideo: "", replyAudio: "", replyFile: "" });
 
         const response = await fetch("/api/message/sendMedia", {
             method: 'POST',
@@ -456,8 +458,8 @@ export default function Chat() {
 				setMessages(m => [...m, {id: messageId, replyUsername, text: message, isReply, replyText, replyImage, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
-			socket.on('receiveImage', (username, image, imageName, isReply, messageId, replyText, replyUsername) => {
-				setMessages(m => [...m, {id: messageId, isReply, replyUsername, replyText, text: "", image: {imageUrl: image, imageName},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
+			socket.on('receiveImage', (username, image, imageName, isReply, messageId, replyText, replyImage, replyUsername) => {
+				setMessages(m => [...m, {id: messageId, isReply, replyUsername, replyText, replyImage, text: "", image: {imageUrl: image, imageName},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, username, isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 			
 			socket.on("roomDeleted", (message) => {
