@@ -75,6 +75,8 @@ export async function POST(req) {
                 text: 1,
                 "image.imageUrl": 1,
                 "video.videoUrl": 1,
+                "file.fileUrl": 1,
+                "file.fileName": 1,
                 _id: 0 
               } 
             }
@@ -126,6 +128,31 @@ export async function POST(req) {
               if: { $ne: ["$replyTo", ""] },
               then: "$replyMessage.video.videoUrl",
               else: ""
+            }
+          },
+          replyFile: {
+            $cond: {
+              if: { $ne: ["$replyTo", ""] },
+              then: {
+                fileUrl: {
+                  $cond: {
+                    if: { $eq: ["$replyMessage.file.fileUrl", ""] },
+                    then: "",
+                    else: "$replyMessage.file.fileUrl"
+                  }
+                },
+                fileName: {
+                  $cond: {
+                    if: { $eq: ["$replyMessage.file.fileName", ""] },
+                    then: "",
+                    else: "$replyMessage.file.fileName"
+                  }
+                }
+              },
+              else: {
+                fileUrl: "",
+                fileName: ""
+              }
             }
           },
           username: "$userDetails.username",
