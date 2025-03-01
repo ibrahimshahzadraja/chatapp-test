@@ -40,6 +40,7 @@ export default function EditProfile() {
             if(data.success){
                 setUserDetails(data.data);
                 setImageUrl(data.data.profilePicture);
+                router.push("/profile");
             }
         }
         catch (error) {

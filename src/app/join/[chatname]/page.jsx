@@ -23,7 +23,7 @@ export default function Chat() {
             const data = await res.json();
 
             if(data.success){
-                setUsername(data.data);
+                setUsername(data.data.username);
             }
         }
         getUsername();
