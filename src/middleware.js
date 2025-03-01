@@ -63,5 +63,5 @@ export async function middleware(req) {
 }
 
 export const config = {
-    matcher: ['/chat/:path*', '/join/:path*', '/'],
+    matcher: ['/chat/:path*', '/join/:path*', '/', '/profile', '/edit-profile'],
 };

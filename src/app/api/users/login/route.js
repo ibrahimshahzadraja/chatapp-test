@@ -17,7 +17,7 @@ export async function POST(req) {
         return new ApiResponse("User not found", null, false, 404);
     }
     if(!user.isVerified){
-        return new ApiResponse("User is not verified", null, false, 400);
+        return new ApiResponse("User is not verified", {isVerified: false}, false, 400);
     }
 
     const userWithSameUsername = await User.findOne({username: user.username, email: {$ne: email}});

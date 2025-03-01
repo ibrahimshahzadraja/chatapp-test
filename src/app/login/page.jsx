@@ -19,6 +19,8 @@ export default function Login(){
           const data = await response.json();
           if(data.success){
             router.push("/");
+          } else if(!data.data.isVerified){
+            router.push("/verify");
           }
     }
 

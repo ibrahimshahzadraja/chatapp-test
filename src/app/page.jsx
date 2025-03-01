@@ -41,7 +41,7 @@ export default function ChatPage() {
     return (
         <>
             <div className='sm:px-8 px-4'>
-                <div className='flex justify-between items-center mt-10'>
+                <div className='flex justify-between items-center mt-5'>
                     <h1 className='text-3xl font-semibold text-[#504F50]'>Secret Convos</h1>
                     <IoChatbubbleEllipsesOutline className='text-[#504F50] h-8 w-8' />
                 </div>

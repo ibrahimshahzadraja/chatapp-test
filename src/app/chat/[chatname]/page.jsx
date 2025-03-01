@@ -426,7 +426,7 @@ export default function Chat() {
 					const data = await response.json();
 
 					if(data.success){
-						setUserName(data.data);
+						setUserName(data.data.username);
 					}
 			}
 			catch (error) {

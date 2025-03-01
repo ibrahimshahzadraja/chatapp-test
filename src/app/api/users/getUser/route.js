@@ -21,5 +21,5 @@ export async function GET(req){
         return new ApiResponse("User not found", null, false, 400)
     }
 
-    return new ApiResponse("User found", user.username, true, 200);
+    return new ApiResponse("User found", user, true, 200);
 }
