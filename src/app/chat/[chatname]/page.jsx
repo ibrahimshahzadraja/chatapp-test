@@ -3,7 +3,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { socket } from '@/socket';
 import { saveAs } from 'file-saver';
-import AdminBoard from '@/app/components/AdminBoard';
 import ReplyIcon from '@mui/icons-material/Reply';
 import { v4 as uuidv4 } from 'uuid';
 import { FaArrowLeft } from "react-icons/fa6";
@@ -22,8 +21,6 @@ export default function Chat() {
     const { chatname } = useParams();
     const router = useRouter();
 
-    const [isMember, setIsMember] = useState(false);
-	const [isOwner, setIsOwner] = useState(false);
 	const [isTyping, setIsTyping] = useState(false);
 	const [messages, setMessages] = useState([]);
 	const [chatDetails, setChatDetails] = useState({});
@@ -31,7 +28,6 @@ export default function Chat() {
 	const [userName, setUserName] = useState("");
 	const [image, setImage] = useState(null);
 	const [addUser, setAddUser] = useState("");
-	const [showAdminBoard, setShowAdminBoard] = useState(false);
 	const [isRecording, setIsRecording] = useState(false);
 	const [reply, setReply] = useState({replyId: "", replyUsername: "", replyText: "", replyImage: "", replyVideo: "", replyAudio: "", replyFile: {fileUrl: "", fileName: ""}});
 	const [fileAttachClicked, setFileAttachClicked] = useState(false);
@@ -40,8 +36,6 @@ export default function Chat() {
 	const audioChunksRef = useRef([]);
 
 	const imageInputRef = useRef(null);
-	const fileInputRef = useRef(null);
-	const videoInputRef = useRef(null);
 	const profileInputRef = useRef(null);
 	const scrollRef = useRef(null);
 	const backgroundImageRef = useRef(null);
@@ -65,25 +59,23 @@ export default function Chat() {
     }
 
 	async function deleteChat() {
-		if(isOwner){
-			try {
-				const response = await fetch("/api/chat/delete", {
-					method: 'POST',
-					headers: {
-					  'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({chatname}),
-				});
-				const data = await response.json();
-		
-				if(data.success){
-					socket.emit("deleteChat", chatname);
-					router.push("/");
-				}
-			} catch (error) {
-				console.log(error);
+		try {
+			const response = await fetch("/api/chat/delete", {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({chatname}),
+			});
+			const data = await response.json();
+	
+			if(data.success){
+				socket.emit("deleteChat", chatname);
 				router.push("/");
 			}
+		} catch (error) {
+			console.log(error);
+			router.push("/");
 		}
 	}
 
@@ -122,10 +114,11 @@ export default function Chat() {
 			});
 			const data = await response.json();
 
-			console.log(data.data[0]);
-
+			if(!data.data.isAuthorized){
+                router.push("/");
+            }
 			if(data.success){
-				setChatDetails(data.data[0]);
+				setChatDetails(data.data);
 			}
 		} catch (error) {
 			console.log(error);
@@ -436,33 +429,6 @@ export default function Chat() {
 		getUser();
 	}, [])
 
-    useEffect(() => {
-        async function checkValid() {
-            try{
-				const response = await fetch("/api/chat/isMember",
-						{
-				    	    method: 'POST',
-				            headers: {
-				              'Content-Type': 'application/json',
-			                },
-			                body: JSON.stringify({chatname}),
-		                });
-				const data = await response.json();
-				    
-				if(!data.success){
-					router.push("/");
-				} else if(data.data.isOwner){
-					setIsOwner(true);
-				} else if(data.data.isMember){
-					setIsMember(true);
-				}
-			} catch (error) {
-				router.push("/");
-			}
-        }
-        checkValid();
-    }, [])
-
 	useEffect(() => {
 		getMessages();
 		getChatDetails();
@@ -504,14 +470,29 @@ export default function Chat() {
 			
 			socket.on("banned", (username, type) => {
 				setMessages(m => [...m, {text: `Admin ${type == "Ban" ? "banned" : "unbanned"} ${username}`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
-				if(type == "Ban"){
-					setChatDetails(cd => ({...cd, bannedUsernames: [...cd.bannedUsernames, username]}));
-					if(userName == username){
-						router.push("/");
-					}
-				} else{
-					setChatDetails(cd => ({...cd, bannedUsernames: cd.bannedUsernames.filter(bannedUser => bannedUser !== username)}));
+				setChatDetails(prevDetails => ({
+					...prevDetails,
+					memberDetails: prevDetails.memberDetails.map(member => 
+						member.username === username 
+							? {...member, isBanned: type === "Ban"}
+							: member
+					)
+				}));
+				if(type == "Ban" && userName == username){
+					router.push("/");
 				}
+			})
+			
+			socket.on("admin", (username, type) => {
+				setMessages(m => [...m, {text: `${username} ${type == "Make" ? "is now an Admin" : "has been removed as Admin"}`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setChatDetails(prevDetails => ({
+					...prevDetails,
+					memberDetails: prevDetails.memberDetails.map(member => 
+						member.username === username 
+							? {...member, isAdmin: type === "Make"}
+							: member
+					)
+				}));
 			})
 	
 			socket.on('user-typing', () => {
@@ -566,7 +547,7 @@ export default function Chat() {
 		saveAs(blob, fileName);
 	  };
 
-    if(!isMember && !isOwner){
+    if(!chatDetails.isAuthorized){
         return(
             <div>Loading...</div>
         )
@@ -578,14 +559,13 @@ export default function Chat() {
 			<Link href={'/'}>
 				<FaArrowLeft className='sm:ml-4' />
 			</Link>
-			<div className='flex items-center gap-4 w-[80%]'>
+			<Link className='flex items-center gap-4 w-[80%]' href={`/chat/${chatname}/details`}>
 				<img src={chatDetails.profilePicture} alt="Chat Profile" className='w-16 h-16 rounded-full border-2 border-black' />
 				<div>
 					<h1 className='font-semibold text-xl'>{chatname}</h1>
 					<p className='text-[#00FF85]'>You, {chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ").length > 20 ? chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ").split(0, 20) + "..." : chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ")}</p>
 				</div>
-			</div>
-			{isOwner && <FaPencil className='absolute right-0 mr-4' />}
+			</Link>
 		</div>
 		<div className={`w-full overflow-y-auto bg-cover bg-center`} style={{backgroundImage: chatDetails.backgroundImage ? `url(${chatDetails.backgroundImage})` : 'none',}} ref={scrollRef}>
 			{messages.map((message, index) => (

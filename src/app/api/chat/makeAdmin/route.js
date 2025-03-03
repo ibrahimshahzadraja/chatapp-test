@@ -3,6 +3,7 @@ import ApiResponse from "@/helpers/ApiResponse";
 import { dbConnect } from "@/dbConfig/dbConfig";
 import mongoose from "mongoose";
 import auth from "@/helpers/auth";
+import User from "@/models/User";
 
 export async function POST(req) {
 
@@ -14,7 +15,7 @@ export async function POST(req) {
 
     await dbConnect();
 
-    const { chatname } = await req.json()
+    const { chatname, username } = await req.json()
 
     if(!chatname) {
         return new ApiResponse("Chatname is required", null, false, 400);
@@ -26,17 +27,22 @@ export async function POST(req) {
         return new ApiResponse("Chat not found", null, false, 400);
     }
 
-    if(chat.banned.includes(new mongoose.Types.ObjectId(userId))){
-        return new ApiResponse("User is banned", null, false, 400);
+    const user = await User.findOne({ username });
+
+    if (!user) {
+        return new ApiResponse("User not found", null, false, 400);
     }
 
-    const isMember = chat.owner.toString() == userId || chat.members.includes(new mongoose.Types.ObjectId(userId))
-    const isOwner = chat.owner.toString() == userId
-
-    if(!isMember){
-        return new ApiResponse("Access denied", null, false, 400);
+    if(chat.admins.includes(new mongoose.Types.ObjectId(user._id))){
+        chat.admins.pull(new mongoose.Types.ObjectId(user._id));
+        await chat.save();
+        return new ApiResponse("Admin removed successfully", null, true, 200);
+    } else{
+        chat.admins.push(new mongoose.Types.ObjectId(user._id));
+        await chat.save();
+        return new ApiResponse("Admin created successfully", null, true, 200);
     }
 
-    return new ApiResponse("Access granted", {isMember, isOwner}, true, 200);
+
 
 }

@@ -21,56 +21,107 @@ export async function POST(req) {
     }
 
     const chat = await Chat.aggregate([
-      {
-        $match: {
-          chatname: chatname
+        {
+            $match: { chatname }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "ownerDetails"
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "members",
+                foreignField: "_id",
+                as: "membersArray"
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "banned",
+                foreignField: "_id",
+                as: "bannedArray"
+            }
+        },
+        {
+            $addFields: {
+                isOwner: { $eq: ["$owner", new mongoose.Types.ObjectId(userId)] },
+                isMember: { $in: [new mongoose.Types.ObjectId(userId), "$members"] },
+                isAdmin: { $in: [new mongoose.Types.ObjectId(userId), "$admins"] }
+            }
+        },
+        {
+            $addFields: {
+                fullData: {
+                    isAuthorized: true,
+                    chatname: "$chatname",
+                    profilePicture: "$profilePicture",
+                    backgroundImage: "$backgroundImage",
+                    memberDetails: {
+                        $concatArrays: [
+                            [{
+                                username: { $arrayElemAt: ["$ownerDetails.username", 0] },
+                                profilePicture: { $arrayElemAt: ["$ownerDetails.profilePicture", 0] },
+                                isOwner: true,
+                                isAdmin: true,
+                                isBanned: false
+                            }],
+                            {
+                                $map: {
+                                    input: "$membersArray",
+                                    as: "member",
+                                    in: {
+                                        username: "$$member.username",
+                                        profilePicture: "$$member.profilePicture",
+                                        isOwner: false,
+                                        isAdmin: { $in: ["$$member._id", "$admins"] },
+                                        isBanned: { $in: ["$$member._id", "$banned"] }
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    memberUsernames: {
+                        $concatArrays: [
+                            [{ $arrayElemAt: ["$ownerDetails.username", 0] }],
+                            "$membersArray.username"
+                        ]
+                    },
+                    bannedUsernames: "$bannedDetails.username",
+                    isOwner: "$isOwner",
+                    isAdmin: "$isAdmin",
+                },
+                limitedData: {
+                    isAuthorized: false,
+                }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                result: {
+                    $cond: {
+                        if: { $or: ["$isOwner", "$isMember"] },
+                        then: "$fullData",
+                        else: "$limitedData"
+                    }
+                }
+            }
+        },
+        {
+            $replaceRoot: { newRoot: "$result" }
         }
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "owner",
-          foreignField: "_id",
-          as: "ownerDetails"
-        }
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "members",
-          foreignField: "_id",
-          as: "memberDetails"
-        }
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "banned",
-          foreignField: "_id",
-          as: "bannedDetails"
-        }
-      },
-      {
-        $project: {
-          chatname: 1,
-          profilePicture: 1,
-          backgroundImage: 1,
-          "ownerUsername": { $arrayElemAt: ["$ownerDetails.username", 0] },
-          memberUsernames: {
-            $concatArrays: [
-              [{ $arrayElemAt: ["$ownerDetails.username", 0] }],
-              "$memberDetails.username"
-            ]
-          },
-          "bannedUsernames": "$bannedDetails.username"
-        }
-      }
     ]);
 
-    if(!chat){
+    if(!chat || chat.length === 0){
         return new ApiResponse("Chat not found", null, false, 400);
     }
 
-    return new ApiResponse("Chat found", chat, true, 200);
+    return new ApiResponse("Chat found", chat[0], true, 200);
 
 }
