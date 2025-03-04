@@ -8,7 +8,7 @@ export default function Chat() {
 
   const { chatname } = useParams();
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
+  const [userDetails, setUserDetails] = useState({});
 
   const router = useRouter();
 
@@ -23,7 +23,7 @@ export default function Chat() {
             const data = await res.json();
 
             if(data.success){
-                setUsername(data.data.username);
+                setUserDetails(data.data);
             }
         }
         getUsername();
@@ -53,8 +53,8 @@ export default function Chat() {
     const data = await response.json();
     
     if(data.success){
-        socket.emit("userJoined", {chatname, username, text: `${username} joined the chat`});
-        await sendSystemMessage(`${username} joined the chat`);
+        socket.emit("userJoined", {chatname, username: userDetails.username, text: `${userDetails.username} joined the chat`, profilePicture: userDetails.profilePicture});
+        await sendSystemMessage(`${userDetails.username} joined the chat`);
       router.push(`/chat/${chatname}`);
     } else{
       console.log(data.message)

@@ -8,6 +8,9 @@ import { FaPencil } from "react-icons/fa6";
 import { BsSearch } from "react-icons/bs";
 import AdminPowers from '@/app/components/AdminPowers';
 import { socket } from '@/socket';
+import { FiLogOut } from "react-icons/fi";
+import { MdDeleteOutline } from "react-icons/md";
+import AdminSideMenu from '@/app/components/AdminSideMenu';
 
 export default function Details() {
 
@@ -18,6 +21,7 @@ export default function Details() {
     const [chatDetails, setChatDetails] = useState({});
     const [userName, setUserName] = useState("");
     const [selectedMember, setSelectedMember] = useState(null);
+    const [showAdminSideMenu, setShowAdminSideMenu] = useState(false);
     
 	async function getChatDetails() {
 		try {
@@ -65,86 +69,54 @@ export default function Details() {
     }
 
     async function sendSystemMessage(text) {
-        const response = await fetch("/api/message/systemMessage", {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({chatname, text, id:"NULL"}),
-        });
+		const response = await fetch("/api/message/systemMessage", {
+			method: 'POST',
+			headers: {
+			  'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({chatname, text, id: "NULL"}),
+		});
 
-        const data = await response.json();
-    }
-  
-    async function kick(username) {
-        const response = await fetch("/api/chat/kick", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({chatname, username}),
-        });
-        const data = await response.json();
-        console.log(data)
+		const data = await response.json();
+	}
 
-        if(data.success){
-            setChatDetails(prevDetails => ({
-                ...prevDetails,
-                memberDetails: prevDetails.memberDetails.filter(member => member.username !== username)
-            }));
-            socket.emit("kicked", {chatname, username});
-            await sendSystemMessage(`Admin kicked ${username}`);
-        }
+    async function leaveChat() {
+		const response = await fetch("/api/chat/leave", {
+			method: 'POST',
+			headers: {
+			  'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({chatname}),
+		  });
+		  const data = await response.json();
+
+		  if(data.success){
+			socket.emit("leaveRoom", {chatname, username: userName});
+			await sendSystemMessage(`${userName} left the chat`);
+			router.push("/");
+		  }
     }
 
-    async function ban(username, type) {
-        console.log(type);
-        const response = await fetch("/api/chat/ban", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({chatname, username}),
-        });
-        const data = await response.json();
-
-        if(data.success){
-            setChatDetails(prevDetails => ({
-                ...prevDetails,
-                memberDetails: prevDetails.memberDetails.map(member => 
-                    member.username === username 
-                        ? {...member, isBanned: type === "Ban"}
-                        : member
-                )
-            }));
-            socket.emit("banned", {chatname, username, type});
-            await sendSystemMessage(`Admin ${type == "Ban" ? "banned" : "unbanned"} ${username}`);
-        }
-    }
-
-    async function toggleAdmin(username, type) {
-        const response = await fetch("/api/chat/makeAdmin", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({chatname, username}),
-        });
-        const data = await response.json();
-
-        if(data.success){
-            setChatDetails(prevDetails => ({
-                ...prevDetails,
-                memberDetails: prevDetails.memberDetails.map(member => 
-                    member.username === username 
-                        ? {...member, isAdmin: type === "Make"}
-                        : member
-                )
-            }));
-            socket.emit("admin", {chatname, username, type});
-            await sendSystemMessage(`${username} ${type == "Make" ? "is now an Admin" : "has been removed as Admin"}`);
-        }
-    }
+	async function deleteChat() {
+		try {
+			const response = await fetch("/api/chat/delete", {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({chatname}),
+			});
+			const data = await response.json();
+	
+			if(data.success){
+				socket.emit("deleteChat", chatname);
+				router.push("/");
+			}
+		} catch (error) {
+			console.log(error);
+			router.push("/");
+		}
+	}
 
     useEffect(() => {
         getUser();
@@ -154,6 +126,21 @@ export default function Details() {
     useEffect(() => {
         if(userName){
             socket.emit("joinRoom", chatname);
+
+            socket.on("userJoin", (username, text, profilePicture) => {
+                setChatDetails(prevDetails => ({
+                    ...prevDetails,
+                    memberDetails: [...prevDetails.memberDetails, {
+                        isAdmin: false, 
+                        isBanned: false, 
+                        isOwner: false, 
+                        username, 
+                        profilePicture
+                    }],
+                    memberUsernames: [...prevDetails.memberUsernames, username]
+                }));
+            });
+
             socket.on("kicked", (username) => {
                 setChatDetails(prevDetails => ({
                     ...prevDetails,
@@ -194,6 +181,17 @@ export default function Details() {
                     };
                 });
             });
+
+            socket.on("userLeft", (username) => {
+                setChatDetails(prevDetails => ({
+                    ...prevDetails,
+                    memberDetails: prevDetails.memberDetails.filter(member => member.username !== username)
+                }));
+			});
+
+            socket.on("roomDeleted", (message) => {
+				router.push("/");
+			})
         }
     }, [userName])
 
@@ -203,69 +201,75 @@ export default function Details() {
 
   return (
     <>
-    <div className='h-[40vh] bg-[#1F1F1F] relative px-6 py-4'>
+    <div className='h-[35vh] bg-[#1F1F1F] relative px-6 py-4'>
         <Link href={`/chat/${chatname}`}>
             <FaArrowLeft className='absolute top-4 left-6' />
         </Link>
-        {chatDetails.isOwner && <IoMdMore className='absolute top-4 right-6 h-7 w-7' />}
-        <div className='flex flex-col justify-center items-center my-8'>
+        {chatDetails.isOwner && <IoMdMore className='absolute top-4 right-6 h-7 w-7 cursor-pointer' onClick={() => setShowAdminSideMenu(p => !p)} />}
+        {showAdminSideMenu && <AdminSideMenu setChatDetails={setChatDetails} chatname={chatname} /> }
+        <div className='flex flex-col justify-center items-center my-3'>
             <div className='relative'>
-                <img src={chatDetails.profilePicture || "/images/default-icon.jpeg"} alt="User profile image" className='rounded-full w-28 h-28' />
-                <Link href={"/edit-chat"}>
+                <img src={chatDetails.profilePicture || "/images/default-icon.jpeg"} alt="User profile image" className='rounded-full w-24 h-24' />
+                {(chatDetails.isOwner || chatDetails.isAdmin) && <Link href={`/chat/${chatname}/edit-chat`}>
                     <FaPencil className='bg-[#434343] rounded-full w-9 h-9 p-1 border-4 border-[#202020] absolute bottom-0 right-0' />
-                </Link>
+                </Link>}
             </div>
             <div className='my-3'>
                 <h2 className='text-xl font-semibold text-center my-1'>{chatname}</h2>
-                <p className='text-center font-light text-sm text-[#00FF85]'>{chatDetails.memberDetails?.map((member) => (member.username === userName ? 'You' : member.username)).join(', ')}</p>
+                <p className='text-center font-light text-sm text-[#00FF85]'>You, {chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ").length > 20 ? chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ").split(0, 20) + "..." : chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ")}</p>
             </div>
         </div>
     </div>
-    <div className='px-6'>
+    <div className='px-6 h-[60vh]'>
         <div className='flex justify-between items-center my-5'>
             <p className='text-2xl font-thin'>Members ({chatDetails.memberDetails?.length})</p>
             <BsSearch className='h-6 w-6 mx-4 cursor-pointer' />
         </div>
-        {chatDetails.memberDetails?.map((member, index) => (
-            <div key={index}>
-                <div className='flex items-center gap-5 my-2 relative'>
-                    <img src={member.profilePicture} alt="User profile" className='rounded-full w-16 h-16 border-4 border-[#2B2B2B]' />
-                    <div>
-                        <p className='text-lg font-semibold'>
-                            {member.username} 
-                            {(member.isOwner || member.isAdmin) && 
-                                <span className='bg-[#272626] p-1 rounded-lg text-xs font-light mx-2'>Admin</span>
-                            } 
-                            {member.isBanned && 
-                                <span className='bg-[#272626] p-1 rounded-lg text-xs font-light mx-2'>Banned</span>
-                            }
-                        </p>
-                        <p className='text-[#00FF85]'>Online</p>
+        <div className='h-[80%] overflow-y-auto'>
+            {chatDetails.memberDetails?.map((member, index) => (
+                <div key={index}>
+                    <div className='flex items-center gap-5 my-2 relative'>
+                        <img src={member.profilePicture} alt="User profile" className='rounded-full w-16 h-16 border-4 border-[#2B2B2B]' />
+                        <div>
+                            <p className='text-lg font-semibold'>
+                                {member.username} 
+                                {(member.isOwner || member.isAdmin) && 
+                                    <span className='bg-[#272626] p-1 rounded-lg text-xs font-light mx-2'>Admin</span>
+                                } 
+                                {member.isBanned && 
+                                    <span className='bg-[#272626] p-1 rounded-lg text-xs font-light mx-2'>Banned</span>
+                                }
+                            </p>
+                            <p className='text-[#00FF85]'>Online</p>
+                        </div>
+                        {(chatDetails.isOwner || chatDetails.isAdmin) && 
+                        !member.isOwner && 
+                        member.username !== userName && 
+                            <AdminPowers isVisible={selectedMember === index} member={member} chatname={chatname} setChatDetails={setChatDetails} />
+                        }
+                        {(chatDetails.isOwner || chatDetails.isAdmin) && 
+                        !member.isOwner && 
+                        member.username !== userName && 
+                            <IoMdMore 
+                                className='absolute top-4 right-6 h-7 w-7 cursor-pointer' 
+                                onClick={() => handleMoreClick(index)} 
+                            />
+                        }
                     </div>
-                    {(chatDetails.isOwner || chatDetails.isAdmin) && 
-                     !member.isOwner && 
-                     member.username !== userName && 
-                        <AdminPowers 
-                            onKick={() => kick(member.username)} 
-                            onBan={() => ban(member.username, member.isBanned?"Unban":"Ban")} 
-                            onMakeAdmin={() => toggleAdmin(member.username, member.isAdmin?"Remove":"Make")} 
-                            isVisible={selectedMember === index} 
-                            isBanned={member.isBanned} 
-                            isAdmin={member.isAdmin}
-                        />
-                    }
-                    {(chatDetails.isOwner || chatDetails.isAdmin) && 
-                     !member.isOwner && 
-                     member.username !== userName && 
-                        <IoMdMore 
-                            className='absolute top-4 right-6 h-7 w-7 cursor-pointer' 
-                            onClick={() => handleMoreClick(index)} 
-                        />
-                    }
+                    <div className='bg-[#434343] sm:h-[2px] h-[1px]'></div>
                 </div>
-                <div className='bg-[#434343] sm:h-[2px] h-[1px]'></div>
-            </div>
-        ))}
+            ))}
+        </div>
+        <div className='absolute bottom-5 left-5 text-lg font-semibold cursor-pointer'>
+            {!chatDetails.isOwner && <div className='flex items-center gap-2' onClick={leaveChat}>
+                <FiLogOut />
+                <p>Leave Convo</p>
+            </div> }
+            {chatDetails.isOwner && <div className='flex items-center gap-2' onClick={deleteChat}>
+                <MdDeleteOutline />
+                <p>Delete Convo</p>
+            </div> }
+        </div>
     </div>
     </>
   )

@@ -38,46 +38,6 @@ export default function Chat() {
 	const imageInputRef = useRef(null);
 	const profileInputRef = useRef(null);
 	const scrollRef = useRef(null);
-	const backgroundImageRef = useRef(null);
-
-    async function leaveChat() {
-		const response = await fetch("/api/chat/leave", {
-			method: 'POST',
-			headers: {
-			  'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({chatname}),
-		  });
-		  const data = await response.json();
-		  console.log(data)
-
-		  if(data.success){
-			socket.emit("leaveRoom", {chatname, username: userName});
-			await sendSystemMessage(`${userName} left the chat`);
-			router.push("/");
-		  }
-    }
-
-	async function deleteChat() {
-		try {
-			const response = await fetch("/api/chat/delete", {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({chatname}),
-			});
-			const data = await response.json();
-	
-			if(data.success){
-				socket.emit("deleteChat", chatname);
-				router.push("/");
-			}
-		} catch (error) {
-			console.log(error);
-			router.push("/");
-		}
-	}
 
 	async function getMessages() {
 		try {
@@ -258,30 +218,6 @@ export default function Chat() {
 		const data = await response.json();
 	}
 
-	async function setBackgroundImage(e) {
-		const file = e.target.files[0];
-
-		const formData = new FormData()
-		formData.append('backgroundImage', file);
-		formData.append('chatname', chatname);
-
-        const response = await fetch("/api/chat/changeBackgroundImage", {
-            method: 'POST',
-            body: formData,
-        });
-    
-        const data = await response.json();
-
-		if(data.success){
-			socket.emit("backgroundImageChanged", {chatname, backgroundImage: data.data});
-			setChatDetails({...chatDetails, backgroundImage: data.data});
-		}
-
-		if (backgroundImageRef.current) {
-			backgroundImageRef.current.value = null;
-		}
-	}
-
 	async function sendVoice(audioFile, messageId) {
 
 		const formData = new FormData();
@@ -438,12 +374,16 @@ export default function Chat() {
 		if(userName){
 			socket.emit("joinRoom", chatname);
 	
-			socket.on("userJoin", (username, text) => {
+			socket.on("userJoin", (username, text, profilePicture) => {
 				setMessages(m => [...m, {text, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 			});
 	
 			socket.on("userLeft", (username) => {
 				setMessages(m => [...m, {text: `${username} left the chat`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setChatDetails(prevDetails => ({
+                    ...prevDetails,
+                    memberDetails: prevDetails.memberDetails.filter(member => member.username !== username)
+                }));
 			});
 			
 			socket.on("message", (username, message, replyObj) => {
@@ -456,13 +396,15 @@ export default function Chat() {
 			});
 			
 			socket.on("roomDeleted", (message) => {
-				console.log(message);
 				router.push("/");
 			})
 			
 			socket.on("kicked", (username) => {
 				setMessages(m => [...m, {text: `Admin kicked ${username}`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
-				setChatDetails(cd => ({...cd, memberUsernames: cd.memberUsernames.filter(uname => uname !== username)}));
+				setChatDetails(prevDetails => ({
+                    ...prevDetails,
+                    memberDetails: prevDetails.memberDetails.filter(member => member.username !== username)
+                }));
 				if(userName == username){
 					router.push("/");
 				}
@@ -555,6 +497,7 @@ export default function Chat() {
 
 	return (
 		<>
+		<div className='h-screen flex flex-col'>
 		<div className='w-full flex items-center bg-[#1F1F1F] sm:gap-4 gap-2 p-2 sticky top-0 z-10'>
 			<Link href={'/'}>
 				<FaArrowLeft className='sm:ml-4' />
@@ -567,7 +510,7 @@ export default function Chat() {
 				</div>
 			</Link>
 		</div>
-		<div className={`w-full overflow-y-auto bg-cover bg-center`} style={{backgroundImage: chatDetails.backgroundImage ? `url(${chatDetails.backgroundImage})` : 'none',}} ref={scrollRef}>
+		<div className={`w-full overflow-y-auto bg-cover bg-center flex-1`} style={{backgroundImage: chatDetails.backgroundImage ? `url(${chatDetails.backgroundImage})` : 'none',}} ref={scrollRef}>
 			{messages.map((message, index) => (
 				<div key={index} className={`${message.isSystemMessage ? 'bg-gray-900' : message.isSentByMe ? "bg-[#333232]" : "bg-[#171616]"} text-white min-w-44 w-fit max-w-[80%] ${message.isSystemMessage ? 'mx-auto' : message.isSentByMe ? "ml-auto" : "mr-auto"} rounded-md py-2 px-3 my-2 mx-2 relative`}>
 					{message.image.imageUrl && !message.isReply && <div>
@@ -659,6 +602,7 @@ export default function Chat() {
 				{!msg && <MdKeyboardVoice className='text-[#7C01F6] w-8 h-8 cursor-pointer' />}
 				{msg && <BsFillSendFill className='text-[#7C01F6] w-8 h-8 cursor-pointer' onClick={sendMessage} />}
 			</div>
+		</div>
 		</div>
 	</>
 	  );

@@ -15,7 +15,8 @@ export async function GET(req){
     
     await dbConnect();
 
-    const user = await User.findOne({_id: new mongoose.Types.ObjectId(userId)});
+    const user = await User.findOne({_id: new mongoose.Types.ObjectId(userId)})
+        .select("-password -refreshToken");
 
     if(!user){
         return new ApiResponse("User not found", null, false, 400)

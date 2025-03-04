@@ -2,6 +2,7 @@ import ApiResponse from "@/helpers/ApiResponse";
 import { dbConnect } from "@/dbConfig/dbConfig";
 import Chat from "@/models/Chat";
 import auth from "@/helpers/auth";
+import mongoose from "mongoose";
 
 export async function POST(req) {
 
@@ -29,10 +30,17 @@ export async function POST(req) {
         return new ApiResponse("You are not the member of this room", null, false, 400);
     }
 
+
     await Chat.updateOne(
         { chatname },
-        { $pull: { members: userId } }
-    );
+        {
+          $pull: {
+            members: userId,
+            admins: new mongoose.Types.ObjectId(userId)
+          }
+        }
+      );
+      
 
     return new ApiResponse("Room left successfully", null, true, 200);
       
