@@ -161,30 +161,6 @@ export default function Chat() {
         console.log(data)
 	}
 
-	async function changeProfilePicture(e) {
-		const file = e.target.files[0];
-
-		const formData = new FormData()
-		formData.append('profilePicture', file);
-		formData.append('chatname', chatname);
-
-        const response = await fetch("/api/chat/changeProfilePicture", {
-            method: 'POST',
-            body: formData,
-        });
-    
-        const data = await response.json();
-
-		if(data.success){
-			socket.emit("profilePictureChanged", {chatname, profilePicture: data.data});
-			setChatDetails({...chatDetails, profilePicture: data.data});
-		}
-
-		if (profileInputRef.current) {
-			profileInputRef.current.value = null;
-		}
-	}
-
 	async function adduser() {
 		const response = await fetch("/api/chat/addUser", {
 			method: 'POST',
@@ -398,9 +374,14 @@ export default function Chat() {
 			socket.on("roomDeleted", (message) => {
 				router.push("/");
 			})
+
+			socket.on("chatChanged", (text) => {
+				console.log("CHATCHANGE", text)
+				setMessages(m => [...m, {text, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+			})
 			
-			socket.on("kicked", (username) => {
-				setMessages(m => [...m, {text: `Admin kicked ${username}`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+			socket.on("kicked", (username, userAdmin) => {
+				setMessages(m => [...m, {text: `${userAdmin} kicked ${username}`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 				setChatDetails(prevDetails => ({
                     ...prevDetails,
                     memberDetails: prevDetails.memberDetails.filter(member => member.username !== username)
@@ -410,8 +391,8 @@ export default function Chat() {
 				}
 			})
 			
-			socket.on("banned", (username, type) => {
-				setMessages(m => [...m, {text: `Admin ${type == "Ban" ? "banned" : "unbanned"} ${username}`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+			socket.on("banned", (username, type, userAdmin) => {
+				setMessages(m => [...m, {text: `${userAdmin} ${type == "Ban" ? "banned" : "unbanned"} ${username}`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
 				setChatDetails(prevDetails => ({
 					...prevDetails,
 					memberDetails: prevDetails.memberDetails.map(member => 
@@ -443,8 +424,10 @@ export default function Chat() {
 			socket.on('user-stopped-typing', () => {
 				setIsTyping(false);
 			});
-			socket.on("profilePictureChanged", (profilePicture) => {
-				setChatDetails(cd => ({...cd, profilePicture}));
+			socket.on("chatUpdated", (cname, profilePicture) => {
+				socket.emit("joinRoom", cname);
+				setChatDetails(cd => ({...cd, chatname: cname, profilePicture}));
+				router.push(`/chat/${cname}`)
 			})
 			socket.on("backgroundImageChanged", (backgroundImage) => {
 				setChatDetails(cd => ({...cd, backgroundImage}));
@@ -502,10 +485,10 @@ export default function Chat() {
 			<Link href={'/'}>
 				<FaArrowLeft className='sm:ml-4' />
 			</Link>
-			<Link className='flex items-center gap-4 w-[80%]' href={`/chat/${chatname}/details`}>
+			<Link className='flex items-center gap-4 w-[80%]' href={`/chat/${chatDetails.chatname}/details`}>
 				<img src={chatDetails.profilePicture} alt="Chat Profile" className='w-16 h-16 rounded-full border-2 border-black' />
 				<div>
-					<h1 className='font-semibold text-xl'>{chatname}</h1>
+					<h1 className='font-semibold text-xl'>{chatDetails.chatname}</h1>
 					<p className='text-[#00FF85]'>You, {chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ").length > 20 ? chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ").split(0, 20) + "..." : chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ")}</p>
 				</div>
 			</Link>

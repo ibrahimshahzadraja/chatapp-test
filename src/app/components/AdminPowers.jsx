@@ -31,8 +31,8 @@ async function kick(username) {
             ...prevDetails,
             memberDetails: prevDetails.memberDetails.filter(member => member.username !== username)
         }));
-        socket.emit("kicked", {chatname, username});
-        await sendSystemMessage(`Admin kicked ${username}`);
+        socket.emit("kicked", {chatname, username, userAdmin: data.data.user});
+        await sendSystemMessage(`${data.data.user} kicked ${username}`);
     }
 }
 
@@ -55,8 +55,8 @@ async function ban(username, type) {
                   : member
           )
         }));
-        socket.emit("banned", {chatname, username, type});
-        await sendSystemMessage(`Admin ${type == "Ban" ? "banned" : "unbanned"} ${username}`);
+        socket.emit("banned", {chatname, username, type, userAdmin: data.data.user});
+        await sendSystemMessage(`${data.data.user} ${type == "Ban" ? "banned" : "unbanned"} ${username}`);
     }
 }
 

@@ -3,6 +3,7 @@ import { dbConnect } from "@/dbConfig/dbConfig";
 import Chat from "@/models/Chat";
 import auth from "@/helpers/auth";
 import User from "@/models/User";
+import mongoose from "mongoose";
 
 export async function POST(req) {
 
@@ -16,6 +17,8 @@ export async function POST(req) {
 
     const { chatname, username } = await req.json();
 
+    const userAdmin = await User.findById(userId);
+
     if(!chatname){
         return new ApiResponse("Chatname is required", null, false, 400);
     }
@@ -24,9 +27,13 @@ export async function POST(req) {
     }
 
     const chat = await Chat.findOne({chatname});
-    
+
     if(!chat){
         return new ApiResponse("Chat not found", null, false, 400);
+    }
+
+    if(!(chat.owner == userId || chat.admins.includes(new mongoose.Types.ObjectId(userId)))){
+        return new ApiResponse("Access denied", null, false, 400);
     }
 
     const user = await User.findOne({username});
@@ -40,6 +47,6 @@ export async function POST(req) {
         { $pull: { members: user._id } }
     );
 
-    return new ApiResponse("Kicked successfully", null, true, 200);
+    return new ApiResponse("Kicked successfully", {user: userAdmin.username}, true, 200);
       
 }

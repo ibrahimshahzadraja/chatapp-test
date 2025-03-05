@@ -35,6 +35,10 @@ export async function POST(req){
     }
 
     if(username){
+        const userWithSameName = await User.findOne({username});
+        if(userWithSameName){
+            return new ApiResponse("Username already exists", null, false, 400);
+        }
         user.username = username;
     }
     if(password){

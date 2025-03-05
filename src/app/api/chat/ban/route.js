@@ -16,6 +16,8 @@ export async function POST(req) {
 
     const { chatname, username } = await req.json();
 
+    const userAdmin = await User.findById({userId});
+
     if(!chatname){
         return new ApiResponse("Chatname is required", null, false, 400);
     }
@@ -31,6 +33,10 @@ export async function POST(req) {
 
     const chat = await Chat.findOne({ chatname });
 
+    if(!(chat.owner == userId || chat.admins.includes(new mongoose.Types.ObjectId(userId)))){
+        return new ApiResponse("Access denied", null, false, 400);
+    }
+
     if (!chat) {
         return new ApiResponse("Chat not found", null, false, 400);
     }
@@ -40,10 +46,10 @@ export async function POST(req) {
     if (isBanned) {
         chat.banned.pull(user._id);
         await chat.save();
-        return new ApiResponse("User unbanned successfully", null, true, 200);
+        return new ApiResponse("User unbanned successfully", {user: userAdmin.username}, true, 200);
     } else {
         chat.banned.push(user._id);
         await chat.save();
-        return new ApiResponse("User banned successfully", null, true, 200);
+        return new ApiResponse("User banned successfully", {user: userAdmin.username}, true, 200);
     }
 }
