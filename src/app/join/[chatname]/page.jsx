@@ -3,6 +3,8 @@ import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { socket } from '@/socket';
+import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
+import { useForm } from 'react-hook-form';
 
 export default function Chat() {
 
@@ -11,6 +13,8 @@ export default function Chat() {
   const [userDetails, setUserDetails] = useState({});
 
   const router = useRouter();
+
+  const { register, handleSubmit, watch, formState: { errors } } = useForm();
 
     useEffect(() => {
         async function getUsername(){
@@ -64,9 +68,31 @@ export default function Chat() {
 
   return (
     <>
-        <div>Chatname: {chatname}</div>
-        <input type="password" placeholder='Enter password' value={password} onChange={(e) => setPassword(e.target.value)} />
-        <button onClick={joinRoom} className="px-3 py-1 cursor-pointer m-1 bg-red-800 text-white">Join Room</button>
+    <div className='flex justify-between items-center mt-5 px-2 absolute top-0 w-full'>
+        <h1 className='text-3xl font-semibold text-[#504F50]'>Secret Convos</h1>
+        <IoChatbubbleEllipsesOutline className='text-[#504F50] h-8 w-8' />
+    </div>
+    <div className='flex flex-col justify-center items-center h-screen'>
+      <div className='md:w-[30%] sm:w-[50%] w-[90%] flex flex-col justify-center items-center gap-6'>
+        <h1 className='text-3xl font-semibold'>{chatname}</h1>
+        <div className='relative w-full'>
+          <div className="relative">
+              <input type="password" placeholder=" " onChange={(e) => setPassword(e.target.value)} className='w-full bg-[#030E1E] px-3 pt-5 pb-2 rounded-md border-[1px] border-[#4d4d4d] text-[#A4A4A4] peer placeholder-transparent focus:outline-none' {...register("password", {
+                      validate: (value) => {
+                          if (value && value.length < 8) {
+                              return "Password must be at least 8 characters";
+                          }
+                          return true;
+                      }
+                  })} 
+              />
+              <label className='absolute text-base left-3 top-3 text-[#A4A4A4] transition-all duration-200 peer-focus:text-xs peer-focus:top-1.5 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:top-1.5'>Password</label>
+          </div>
+          {errors.password && <div className='text-red-600 mt-1'>{errors.password.message}</div>}
+        </div>
+        <button onClick={joinRoom} className='w-full rounded-lg text-white bg-[#438FFF] py-2 font-semibold text-lg'>Join Room</button>
+      </div>
+    </div>
     </>
   )
 }

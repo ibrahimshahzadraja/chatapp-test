@@ -5,7 +5,6 @@ import { FaArrowLeft } from "react-icons/fa6";
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { useParams, useRouter } from "next/navigation";
-import { socket } from '@/socket';
 
 export default function EditProfile() {
 
@@ -41,18 +40,6 @@ export default function EditProfile() {
         }
     }
 
-    async function sendSystemMessage(newChatname, text) {
-      const response = await fetch("/api/message/systemMessage", {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({chatname: newChatname, text, id: "NULL"}),
-      });
-  
-      const data = await response.json();
-    }
-
     async function updateChat(d){
       console.log(d);
       if(d.convoname == chatname && d.password == "" && d.profilePicture.length == 0){
@@ -63,7 +50,7 @@ export default function EditProfile() {
 
       formData.append("convoname", d.convoname == chatname ? "" : d.convoname);
       formData.append("password", d.password);
-      formData.append("profilePicture", d.profilePicture[0] || '');
+      formData.append("profilePicture", d.profilePicture);
       formData.append("chatname", chatname);
 
       try {
@@ -80,16 +67,9 @@ export default function EditProfile() {
           router.push("/");
         }
         if(data.success){
-            socket.emit("chatUpdated", {...data.data, prevChatname: chatname});
-            if(data.data.isProfilePictureChanged){
-              socket.emit("chatChanged", {chatname: data.data.chatname, text: `${data.data.user} updated chat profile picture`})
-              await sendSystemMessage(data.data.chatname, `${data.data.user} updated chat profile picture`)
-            }
-            if(data.data.isChatnameChanged){
-              socket.emit("chatChanged", {chatname: data.data.chatname, text: `${data.data.user} changed the chat name from ${chatname} to ${data.data.chatname}`})
-              await sendSystemMessage(data.data.chatname, `${data.data.user} changed the chat name from ${chatname} to ${data.data.chatname}`)
-            }
-            setTimeout(() => {router.push(`/chat/${data.data.chatname}/details`);}, 2500)
+            router.push(`/chat/${chatname}/details`);
+            setChatDetails(data.data);
+            setImageUrl(data.data.profilePicture);
         }
     }
     catch (error) {

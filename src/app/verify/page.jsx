@@ -55,7 +55,7 @@ export default function Verify() {
                 key={index}
                 type="text"
                 maxLength="1"
-                className="shadow-xs text-gray-600 flex w-[64px] items-center justify-center rounded-lg border border-stroke bg-white p-2 text-center text-2xl font-medium text-gray-5 outline-none sm:text-4xl dark:border-dark-3 dark:bg-white/5"
+                className="shadow-xs text-gray-600 flex sm:w-[64px] w-[48px] items-center justify-center rounded-lg border border-stroke bg-white p-2 text-center text-2xl font-medium text-gray-5 outline-none sm:text-4xl dark:border-dark-3 dark:bg-white/5"
                 ref={(el) => (inputRefs.current[index] = el)}
                 onInput={(e) => handleInputChange(e, index)}
                 onKeyDown={(e) => handleKeyDown(e, index)}
