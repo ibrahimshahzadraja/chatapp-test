@@ -22,12 +22,19 @@ export async function middleware(req) {
     }
 
     try {
-        const response = await fetch(`${req.nextUrl.origin}/api/users/tokenRefresh`, {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || req.nextUrl.origin;
+        const response = await fetch(`${baseUrl}/api/users/tokenRefresh`, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${refreshToken}`
+                'Authorization': `Bearer ${refreshToken}`,
+                'Content-Type': 'application/json'
             }
         });
+
+        if (!response.ok) {
+            console.error('Token refresh failed:', response.status, response.statusText);
+            return NextResponse.redirect(new URL('/login', req.url));
+        }
 
         const data = await response.json();
 
@@ -57,7 +64,7 @@ export async function middleware(req) {
         return nextResponse;
 
     } catch (error) {
-        console.error('Error refreshing token:', error);
+        console.error('Error refreshing token:', error.message);
         return NextResponse.redirect(new URL('/login', req.url));
     }
 }
