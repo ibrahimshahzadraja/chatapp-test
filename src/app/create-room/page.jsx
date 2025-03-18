@@ -7,6 +7,7 @@ import { RiKey2Line } from "react-icons/ri";
 import { useRouter } from "next/navigation";
 import { socket } from "@/socket";
 import Options from "../components/Options";
+import { toast } from 'react-toastify';
 
 export default function createRoom(){
 
@@ -36,6 +37,8 @@ export default function createRoom(){
         if(data.success){
             socket.emit("joinRoom", data.data);
             router.push(`/chat/${data.data}`);
+        } else{
+            toast.error(data.message);
         }
     }
 

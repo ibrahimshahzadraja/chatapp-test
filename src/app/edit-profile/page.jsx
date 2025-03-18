@@ -5,6 +5,7 @@ import { FaArrowLeft } from "react-icons/fa6";
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { useRouter } from "next/navigation";
+import { toast } from 'react-toastify';
 
 export default function EditProfile() {
 
@@ -35,11 +36,15 @@ export default function EditProfile() {
             console.log(data)
 
             if(data.success && data.data.isPasswordChanged){
+                toast.info("Profile updated successfully! To change password verify your email");
                 router.push("/verify");
             }
             if(data.success){
+                toast.success(data.message);
                 setUserDetails(data.data);
                 setImageUrl(data.data.profilePicture);
+            } else{
+                toast.error(data.message);
             }
         }
         catch (error) {

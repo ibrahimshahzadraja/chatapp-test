@@ -11,6 +11,7 @@ import { socket } from '@/socket';
 import { FiLogOut } from "react-icons/fi";
 import { MdDeleteOutline } from "react-icons/md";
 import AdminSideMenu from '@/app/components/AdminSideMenu';
+import { toast } from 'react-toastify';
 
 export default function Details() {
 
@@ -91,12 +92,15 @@ export default function Details() {
 		  const data = await response.json();
 
 		  if(data.success){
+            toast.success(data.message);
 			socket.emit("leaveRoom", {chatname, username: userName});
 			await sendSystemMessage(`${userName} left the chat`);
 			router.push("/");
-		  }
-    }
-
+        } else{
+              toast.error(data.message);
+            }
+        }
+        
 	async function deleteChat() {
 		try {
 			const response = await fetch("/api/chat/delete", {
@@ -109,9 +113,12 @@ export default function Details() {
 			const data = await response.json();
 	
 			if(data.success){
+                toast.success(data.message);
 				socket.emit("deleteChat", chatname);
 				router.push("/");
-			}
+			} else{
+                toast.error(data.message);
+            }
 		} catch (error) {
 			console.log(error);
 			router.push("/");

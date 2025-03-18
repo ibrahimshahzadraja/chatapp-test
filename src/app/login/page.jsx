@@ -2,6 +2,7 @@
 import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from 'react-toastify';
 
 export default function Login(){
 
@@ -19,9 +20,13 @@ export default function Login(){
           const data = await response.json();
           console.log(data);
           if(data.success){
+            toast.success(data.message);
             router.push("/");
           } else if(data.success && !data.data?.isVerified){
+            toast.warn(data.message);
             router.push("/verify");
+          } else{
+            toast.error(data.message);
           }
     }
 

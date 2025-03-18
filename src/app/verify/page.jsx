@@ -1,6 +1,7 @@
 "use client"
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { toast } from 'react-toastify';
 
 export default function Verify() {
   const inputRefs = useRef([]);
@@ -40,7 +41,10 @@ export default function Verify() {
       const data = await response.json();
       console.log(data)
       if(data.success){
+        toast.success(data.message)
         router.push("/login");
+      } else{
+        toast.error(data.message)
       }
   };
 

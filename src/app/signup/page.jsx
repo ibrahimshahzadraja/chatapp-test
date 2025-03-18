@@ -3,6 +3,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { toast } from 'react-toastify';
 
 export default function Signup() {
 
@@ -33,7 +34,10 @@ export default function Signup() {
 
         console.log(data)
         if (data.success) {
+            toast.success(data.message);
             router.push("/verify");
+        } else{
+            toast.error(data.message);
         }
     };
     

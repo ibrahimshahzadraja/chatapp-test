@@ -1,10 +1,10 @@
 "use client"
 import React, {useState, useEffect} from 'react'
-import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { FaArrowLeft } from "react-icons/fa6";
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { useParams, useRouter } from "next/navigation";
+import { toast } from 'react-toastify';
 
 export default function EditProfile() {
 
@@ -64,12 +64,16 @@ export default function EditProfile() {
         console.log(data);
 
         if(!data.success && data.isAuthorized == false){
-          router.push("/");
+            toast.warn(data.message);
+            router.push("/");
         }
         if(data.success){
+            toast.success(data.message);
             router.push(`/chat/${chatname}/details`);
             setChatDetails(data.data);
             setImageUrl(data.data.profilePicture);
+        } else{
+            toast.error(data.message);
         }
     }
     catch (error) {
