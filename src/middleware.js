@@ -22,8 +22,7 @@ export async function middleware(req) {
     }
 
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || req.nextUrl.origin;
-        const response = await fetch(`${baseUrl}/api/users/tokenRefresh`, {
+        const response = await fetch(`${req.nextUrl.origin}/api/users/tokenRefresh`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${refreshToken}`,
@@ -43,6 +42,7 @@ export async function middleware(req) {
         }
 
         const nextResponse = NextResponse.next();
+        console.log("MIDDLEWARE",data);
 
         nextResponse.cookies.set('accessToken', data.accessToken, {
             httpOnly: true,

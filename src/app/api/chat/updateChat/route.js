@@ -57,7 +57,7 @@ export async function POST(req){
     if(password){
         chat.password = password;
     }
-    if(profilePicture){
+    if(profilePicture.size){
         let url = await uploadOnCloudinary(profilePicture, 'image');
         chat.profilePicture = url;
         isProfilePictureChanged = true;
