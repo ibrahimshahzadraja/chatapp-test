@@ -27,7 +27,8 @@ export async function middleware(req) {
             headers: {
                 'Authorization': `Bearer ${refreshToken}`,
                 'Content-Type': 'application/json'
-            }
+            },
+            credentials: 'include'
         });
 
         if (!response.ok) {
@@ -37,28 +38,26 @@ export async function middleware(req) {
 
         const data = await response.json();
 
-        if (!data.success) {
+        if (!data.success || !data.accessToken || !data.refreshToken) {
             return NextResponse.redirect(new URL('/login', req.url));
         }
 
         const nextResponse = NextResponse.next();
-        console.log("MIDDLEWARE",data);
 
         nextResponse.cookies.set('accessToken', data.accessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: true, // Always set to true for Vercel
             path: '/',
-            sameSite: 'strict',
-            maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
+            sameSite: 'lax', // Changed from strict to lax for better compatibility
+            maxAge: 3 * 24 * 60 * 60, // 3 days in seconds
         });
 
-        
         nextResponse.cookies.set('refreshToken', data.refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: true, // Always set to true for Vercel
             path: '/',
-            sameSite: 'strict',
-            maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
+            sameSite: 'lax', // Changed from strict to lax for better compatibility
+            maxAge: 365 * 24 * 60 * 60, // 1 year in seconds
         });
 
         return nextResponse;
@@ -70,5 +69,13 @@ export async function middleware(req) {
 }
 
 export const config = {
-    matcher: ['/chat/:path*', '/join/:path*', '/', '/profile', '/edit-profile', '/create-room'],
+    matcher: [
+        '/chat/:path*',
+        '/join/:path*',
+        '/',
+        '/profile',
+        '/edit-profile',
+        '/create-room',
+        // Add any other protected routes here
+    ]
 };
