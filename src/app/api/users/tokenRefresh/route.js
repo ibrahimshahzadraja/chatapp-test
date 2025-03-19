@@ -31,7 +31,7 @@ export async function GET(req) {
         
         response.cookies.set('accessToken', accessToken, {
             httpOnly: true,
-            secure: isProduction,
+            secure: true,
             path: '/',
             sameSite: 'lax',
             maxAge: 3 * 24 * 60 * 60, // 3 days
@@ -39,7 +39,7 @@ export async function GET(req) {
         
         response.cookies.set('refreshToken', refreshToken, {
             httpOnly: true,
-            secure: isProduction,
+            secure: true,
             path: '/',
             sameSite: 'lax',
             maxAge: 365 * 24 * 60 * 60, // 7 days
