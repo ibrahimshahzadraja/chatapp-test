@@ -5,6 +5,8 @@ async function getUser(req) {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
 
+	console.log("ACCESSTOKENINAUTH: ", accessToken);
+
 	if (!accessToken) {
 		return false;
 	}
