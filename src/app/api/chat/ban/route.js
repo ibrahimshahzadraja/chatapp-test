@@ -62,7 +62,7 @@ export async function POST(req) {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             path: '/',
-            sameSite: 'strict',
+            sameSite: 'lax',
             maxAge: 365 * 24 * 60 * 60
             });
         }
@@ -86,7 +86,7 @@ export async function POST(req) {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             path: '/',
-            sameSite: 'strict',
+            sameSite: 'lax',
             maxAge: 365 * 24 * 60 * 60
             });
         }

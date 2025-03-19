@@ -115,7 +115,7 @@ export async function GET(req) {
 		httpOnly: true,
 		secure: process.env.NODE_ENV === 'production',
 		path: '/',
-		sameSite: 'strict',
+		sameSite: 'lax',
 		maxAge: 365 * 24 * 60 * 60
 		});
 	}
