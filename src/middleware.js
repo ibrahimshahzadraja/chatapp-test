@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 export async function middleware(req) {
     const refreshToken = req.cookies.get("refreshToken")?.value;
 
+    console.log("REFRESHTOKEN", refreshToken);
+
     if (!refreshToken) {
         return NextResponse.redirect(new URL('/login', req.url));
     }
