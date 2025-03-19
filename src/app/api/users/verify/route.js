@@ -1,6 +1,7 @@
 import { dbConnect } from "@/dbConfig/dbConfig";
 import User from "@/models/User";
 import ApiResponse from "@/helpers/ApiResponse";
+import { generateAccessAndRefreshToken } from "@/utils/generateTokens";
 
 export async function POST(req) {
     await dbConnect();
@@ -33,6 +34,25 @@ export async function POST(req) {
     }
     
     user.isVerified = true;
+    const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id);
     await user.save();
-    return new ApiResponse("User verified successfully", null, true, 200);
+
+    const response = new ApiResponse("User verified successfully", null, true, 200);
+    response.cookies.set('accessToken', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        sameSite: 'strict',
+        maxAge: 3 * 24 * 60 * 60,
+    });
+    
+    response.cookies.set('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    sameSite: 'strict',
+    maxAge: 365 * 24 * 60 * 60
+    });
+
+    return response;
 }

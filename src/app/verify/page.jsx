@@ -42,7 +42,7 @@ export default function Verify() {
       console.log(data)
       if(data.success){
         toast.success(data.message)
-        router.push("/login");
+        router.push("/");
       } else{
         toast.error(data.message)
       }
