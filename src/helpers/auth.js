@@ -5,15 +5,15 @@ import User from "@/models/User";
 
 export default async function auth(req) {
     const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken')?.value;
-    const refreshToken = cookieStore.get('refreshToken')?.value;
+    const accessTokenCookie = cookieStore.get('accessToken')?.value;
+    const refreshTokenCookie = cookieStore.get('refreshToken')?.value;
 	
-	if(!refreshToken){
+	if(!refreshTokenCookie){
 		return {accessToken: '', refreshToken: '', isAuthorized: false, tokenChanged: false};
 	}
 
-	if(!accessToken){
-        const decodedToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+	if(!accessTokenCookie){
+        const decodedToken = jwt.verify(refreshTokenCookie, process.env.REFRESH_TOKEN_SECRET);
         const user = await User.findById(decodedToken?._id);
         
         if (!user){
@@ -26,8 +26,8 @@ export default async function auth(req) {
 		return {accessToken, refreshToken, isAuthorized: true, tokenChanged: true};
 	}
 
-	const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-	req.userId = decodedToken ?._id;
+	const decodedToken = jwt.verify(accessTokenCookie, process.env.ACCESS_TOKEN_SECRET);
+	req.userId = decodedToken?._id;
 
 	return {accessToken: '', refreshToken: '', isAuthorized: true, tokenChanged: false};
 }
