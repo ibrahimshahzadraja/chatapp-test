@@ -4,6 +4,7 @@ export async function middleware(req) {
     const refreshToken = req.cookies.get("refreshToken")?.value;
 
     console.log("REFRESHTOKEN", refreshToken);
+    console.log("REQ", req);
 
     if (!refreshToken) {
         return NextResponse.redirect(new URL('/login', req.url));
