@@ -7,13 +7,14 @@ import User from "@/models/User";
 
 export async function POST(req) {
 
-    const isAuthenticated = await auth(req);
+    await dbConnect();
+
+    const authData = await auth(req);
     const userId = req.userId;
-    if(!isAuthenticated || !userId) {
+    
+    if(!authData.isAuthorized || !userId) {
         return new ApiResponse("Unauthorized", null, false, 401);
     }
-
-    await dbConnect();
 
     const { chatname, username } = await req.json()
 
@@ -36,13 +37,49 @@ export async function POST(req) {
     if(chat.admins.includes(new mongoose.Types.ObjectId(user._id))){
         chat.admins.pull(new mongoose.Types.ObjectId(user._id));
         await chat.save();
-        return new ApiResponse("Admin removed successfully", null, true, 200);
+        const response = new ApiResponse("Admin removed successfully", null, true, 200);
+
+        if(authData.tokenChanged){
+            response.cookies.set('accessToken', authData.accessToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                path: '/',
+                sameSite: 'strict',
+                maxAge: 3 * 24 * 60 * 60,
+            });
+            
+            response.cookies.set('refreshToken', authData.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            sameSite: 'strict',
+            maxAge: 365 * 24 * 60 * 60
+            });
+        }
+
+        return response;
     } else{
         chat.admins.push(new mongoose.Types.ObjectId(user._id));
         await chat.save();
-        return new ApiResponse("Admin created successfully", null, true, 200);
+        const response = new ApiResponse("Admin created successfully", null, true, 200);
+
+        if(authData.tokenChanged){
+            response.cookies.set('accessToken', authData.accessToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                path: '/',
+                sameSite: 'strict',
+                maxAge: 3 * 24 * 60 * 60,
+            });
+            
+            response.cookies.set('refreshToken', authData.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+            sameSite: 'strict',
+            maxAge: 365 * 24 * 60 * 60
+            });
+        }
+        return response;
     }
-
-
-
 }

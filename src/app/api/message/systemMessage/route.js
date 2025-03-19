@@ -3,15 +3,8 @@ import { dbConnect } from "@/dbConfig/dbConfig";
 import ApiResponse from "@/helpers/ApiResponse";
 import mongoose from "mongoose";
 import Chat from "@/models/Chat";
-import auth from "@/helpers/auth";
 
 export async function POST(req) {
-
-    const isAuthenticated = await auth(req);
-    const userId = req.userId;
-    if(!isAuthenticated || !userId) {
-        return new ApiResponse("Unauthorized", null, false, 401);
-    }
 
     await dbConnect();
 

@@ -8,13 +8,14 @@ import mongoose from "mongoose";
 
 export async function POST(req) {
 
-    const isAuthenticated = await auth(req);
+    await dbConnect();
+
+    const authData = await auth(req);
     const userId = req.userId;
-    if(!isAuthenticated || !userId) {
+    
+    if(!authData.isAuthorized || !userId) {
         return new ApiResponse("Unauthorized", null, false, 401);
     }
-
-    await dbConnect();
 
     const formData = await req.formData();
     const file = formData.get('file');
@@ -102,5 +103,24 @@ export async function POST(req) {
 
     let uploadedUrl = image || voice || fileUrl || video;
 
-    return new ApiResponse("File sent successfully", {fileUrl: uploadedUrl, fileName: file.name}, true, 200);
+    const response = new ApiResponse("File sent successfully", {fileUrl: uploadedUrl, fileName: file.name}, true, 200);
+    if(authData.tokenChanged){
+		response.cookies.set('accessToken', authData.accessToken, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			path: '/',
+			sameSite: 'strict',
+			maxAge: 3 * 24 * 60 * 60,
+		});
+		
+		response.cookies.set('refreshToken', authData.refreshToken, {
+		httpOnly: true,
+		secure: process.env.NODE_ENV === 'production',
+		path: '/',
+		sameSite: 'strict',
+		maxAge: 365 * 24 * 60 * 60
+		});
+	}
+
+	return response;
 }

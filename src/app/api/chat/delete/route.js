@@ -7,13 +7,14 @@ import auth from "@/helpers/auth";
 
 export async function POST(req){
 
-    const isAuthenticated = await auth(req);
+    await dbConnect();
+
+    const authData = await auth(req);
     const userId = req.userId;
-    if(!isAuthenticated || !userId) {
+    
+    if(!authData.isAuthorized || !userId) {
         return new ApiResponse("Unauthorized", null, false, 401);
     }
-
-    await dbConnect();
 
     const { chatname } = await req.json();
 
@@ -31,5 +32,25 @@ export async function POST(req){
 
     await chat.deleteOne();
     
-    return new ApiResponse("Chat deleted", null, true, 200);
+    const response = new ApiResponse("Chat deleted", null, true, 200);
+
+    if(authData.tokenChanged){
+		response.cookies.set('accessToken', authData.accessToken, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			path: '/',
+			sameSite: 'strict',
+			maxAge: 3 * 24 * 60 * 60,
+		});
+		
+		response.cookies.set('refreshToken', authData.refreshToken, {
+		httpOnly: true,
+		secure: process.env.NODE_ENV === 'production',
+		path: '/',
+		sameSite: 'strict',
+		maxAge: 365 * 24 * 60 * 60
+		});
+	}
+
+    return response;
 }

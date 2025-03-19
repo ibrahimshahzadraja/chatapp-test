@@ -5,13 +5,14 @@ import auth from "@/helpers/auth";
 
 export async function GET(req){
     
-    const isAuthenticated = await auth(req);
+    await dbConnect();
+
+    const authData = await auth(req);
     const userId = req.userId;
-    if(!isAuthenticated || !userId) {
+    
+    if(!authData.isAuthorized || !userId) {
         return new ApiResponse("Unauthorized", null, false, 401);
     }
-    
-    await dbConnect();
     
     const user = await User.findByIdAndUpdate(userId, {$unset: {refreshToken: 1}})
 

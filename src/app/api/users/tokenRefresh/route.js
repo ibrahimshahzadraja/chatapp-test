@@ -31,18 +31,18 @@ export async function GET(req) {
         
         response.cookies.set('accessToken', accessToken, {
             httpOnly: true,
-            secure: true,
+            secure: process.env.NODE_ENV === 'production',
             path: '/',
-            sameSite: 'lax',
-            maxAge: 3 * 24 * 60 * 60, // 3 days
+            sameSite: 'strict',
+            maxAge: 3 * 24 * 60 * 60,
         });
         
         response.cookies.set('refreshToken', refreshToken, {
             httpOnly: true,
-            secure: true,
+            secure: process.env.NODE_ENV === 'production',
             path: '/',
-            sameSite: 'lax',
-            maxAge: 365 * 24 * 60 * 60, // 7 days
+            sameSite: 'strict',
+            maxAge: 365 * 24 * 60 * 60,
         });
         
         return response;
