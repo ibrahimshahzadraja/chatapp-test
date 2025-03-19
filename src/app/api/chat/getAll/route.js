@@ -8,6 +8,7 @@ export async function GET(req) {
 
   const isAuthenticated = await auth(req);
   const userId = req.userId;
+  console.log("USERID: " ,userId);
   if(!isAuthenticated || !userId) {
       return new ApiResponse("Unauthorized", null, false, 401);
   }
