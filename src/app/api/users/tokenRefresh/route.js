@@ -23,29 +23,30 @@ export async function GET(req) {
         const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
         const response = NextResponse.json({
-            message: "Token refreshed successfully", 
-            success: true, 
-            accessToken,
-            refreshToken
+            message: "Token refreshed successfully",
+            success: true,
+            accessToken: accessToken,
+            refreshToken: refreshToken
         }, { status: 200 });
-
+        
         response.cookies.set('accessToken', accessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: isProduction,
             path: '/',
-            sameSite: 'strict',
-            maxAge: 3 * 24 * 60 * 60 * 1000 // 3 days
+            sameSite: 'lax',
+            maxAge: 3 * 24 * 60 * 60, // 3 days
         });
-
+        
         response.cookies.set('refreshToken', refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: isProduction,
             path: '/',
-            sameSite: 'strict',
-            maxAge: 365 * 24 * 60 * 60 * 1000 // 1 year
+            sameSite: 'lax',
+            maxAge: 365 * 24 * 60 * 60, // 7 days
         });
-
+        
         return response;
+        
 
     } catch (error) {
         console.error("Token verification failed", error);
