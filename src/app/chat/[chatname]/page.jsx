@@ -417,13 +417,20 @@ export default function Chat() {
 
 					if(data.success){
 						setUserName(data.data.username);
+						localStorage.setItem("username", data.data.username)
+						localStorage.setItem("email", data.data.email)
+						localStorage.setItem("profilePicture", data.data.profilePicture)
 					}
 			}
 			catch (error) {
 				router.push("/");
 			}
 		}
-		getUser();
+		if(!localStorage.getItem("username")){
+			getUser();
+		} else{
+			setUserName(localStorage.getItem("username"));
+		}
 	}, [])
 
 	useEffect(() => {
