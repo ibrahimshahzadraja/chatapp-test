@@ -52,28 +52,37 @@ export default function EditProfile() {
         }
     }
 
-    useEffect(() => {
-        async function getUser() {
-            try {
-                const response = await fetch("/api/users/getUser",
-                    {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        }
-                    });
-                    const data = await response.json();
-
-                    if(data.success){
-                        setUserDetails(data.data);
-                        setImageUrl(data.data.profilePicture);
+    async function getUser() {
+        try {
+            const response = await fetch("/api/users/getUser",
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
                     }
-            }
-            catch (error) {
-                router.push("/");
-            }
+                });
+                const data = await response.json();
+
+                if(data.success){
+                    setUserDetails(data.data);
+                    setImageUrl(data.data.profilePicture);
+                    localStorage.setItem("username", data.data.username)
+                    localStorage.setItem("email", data.data.email)
+                    localStorage.setItem("profilePicture", data.data.profilePicture)
+                }
         }
-        getUser();
+        catch (error) {
+            router.push("/");
+        }
+    }
+
+    useEffect(() => {
+        if(!localStorage.getItem("username")){
+            getUser();
+        } else{
+            setImageUrl(localStorage.getItem("profilePicture"));
+            setUserDetails(p => ({...p, username: localStorage.getItem("username"), email: localStorage.getItem("email"), profilePicture: localStorage.getItem("profilePicture")}));
+        }
     }, [])
     
     useEffect(() => {

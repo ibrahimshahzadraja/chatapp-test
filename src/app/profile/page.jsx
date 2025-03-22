@@ -5,35 +5,64 @@ import { RiNewsLine } from "react-icons/ri";
 import { PiBellSimpleBold } from "react-icons/pi";
 import { AiOutlineLock } from "react-icons/ai";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
+import { FiLogOut } from "react-icons/fi";
 import Options from '../components/Options';
 import Link from 'next/link';
+import { toast } from 'react-toastify';
+import { useRouter } from "next/navigation";
 
 export default function Profile() {
 
     const [userDetails, setUserDetails] = useState({});
+    const router = useRouter();
+
+    async function getUser() {
+        try {
+            const response = await fetch("/api/users/getUser",
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                const data = await response.json();
+
+                if(data.success){
+                    setUserDetails(data.data);
+                    localStorage.setItem("username", data.data.username)
+                    localStorage.setItem("email", data.data.email)
+                    localStorage.setItem("profilePicture", data.data.profilePicture)
+                }
+        }
+        catch (error) {
+            router.push("/");
+        }
+    }
 
     useEffect(() => {
-		async function getUser() {
-			try {
-				const response = await fetch("/api/users/getUser",
-					{
-						method: 'GET',
-						headers: {
-							'Content-Type': 'application/json',
-						}
-					});
-					const data = await response.json();
+        if(!localStorage.getItem("username")){
+            getUser();
+        } else{
+            setUserDetails(p => ({...p, username: localStorage.getItem("username"), email: localStorage.getItem("email"), profilePicture: localStorage.getItem("profilePicture")}));
+        }
+    }, [])
 
-					if(data.success){
-						setUserDetails(data.data);
-					}
-			}
-			catch (error) {
-				router.push("/");
-			}
-		}
-		getUser();
-	}, [])
+    async function logout(){
+        const response = await fetch("/api/users/logout",
+            {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            const data = await response.json();
+            if(data.success){
+                toast.success(data.message);
+                router.push("/login");
+            } else{
+                toast.error("Logout was unsuccessfull. Try Again!");
+            }
+    }
 
     return (
         <>
@@ -72,6 +101,10 @@ export default function Profile() {
                     </div>
                 </div>
             </div>
+        </div>
+        <div className='flex items-center gap-2 absolute right-2 bottom-20 text-xl font-semibold cursor-pointer p-2' onClick={logout}>
+            <FiLogOut />
+            <p>Log out</p>
         </div>
         <Options page={"profile"} />
         </>

@@ -555,7 +555,7 @@ export default function Chat() {
 		const response = await fetch(fileUrl);
 		const blob = await response.blob();
 		saveAs(blob, fileName);
-	  };
+	};
 
     if(!chatDetails.isAuthorized){
         return(

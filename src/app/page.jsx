@@ -28,6 +28,28 @@ export default function ChatPage() {
             setFilteredRooms(data.data);
         }
     }
+    
+    async function getUser() {
+        try {
+            const response = await fetch("/api/users/getUser",
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                const data = await response.json();
+
+                if(data.success){
+                    localStorage.setItem("username", data.data.username)
+                    localStorage.setItem("email", data.data.email)
+                    localStorage.setItem("profilePicture", data.data.profilePicture)
+                }
+        }
+        catch (error) {
+            router.push("/");
+        }
+    }
 
     function handleSearchInput(e){
         setChatname(e.target.value);
@@ -36,6 +58,12 @@ export default function ChatPage() {
 
     useEffect(() => {
         getRooms();
+    }, [])
+
+    useEffect(() => {
+        if(!localStorage.getItem("username")){
+            getUser();
+        }
     }, [])
 
     return (
@@ -59,7 +87,7 @@ export default function ChatPage() {
                                     <img src={r.profilePicture} alt="image" className='sm:h-20 sm:w-20 h-16 w-16 rounded-full sm:ml-4 ml-2' />
                                     <div className='sm:ml-8 ml-3'>
                                         <p className='text-[#C8C8C8] font-medium sm:text-lg text-sm'>{r.chatname}</p>
-                                        <p><span className='text-[#4A494C] sm:text-base text-sm font-medium'>{r.sendByUsername ? `${r.sendByUsername}:` : ""}</span><span className='text-white sm:font-semibold sm:text-base text-sm mx-2'>{r.messageText ? r.messageText.slice(0, 20) + "..." : r.image ? "image" : r.voice ? "voice" : ""}</span></p>
+                                        <p><span className='text-[#4A494C] sm:text-base text-sm font-medium'>{r.sendByUsername ? `${r.sendByUsername}:` : ""}</span><span className='text-white sm:font-semibold sm:text-base text-sm mx-2'>{r.messageText ? r.messageText.slice(0, 20) + "..." : r.image.imageUrl ? "image" : r.voice ? "voice" : ""}</span></p>
                                     </div>
                                 </div>
                             </Link>
