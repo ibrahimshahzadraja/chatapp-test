@@ -6,7 +6,6 @@ import { saveAs } from 'file-saver';
 import ReplyIcon from '@mui/icons-material/Reply';
 import { v4 as uuidv4 } from 'uuid';
 import { FaArrowLeft } from "react-icons/fa6";
-import { FaPencil } from "react-icons/fa6";
 import Link from 'next/link';
 import { IoIosAttach } from "react-icons/io";
 import { MdKeyboardVoice } from "react-icons/md";
@@ -29,14 +28,18 @@ export default function Chat() {
 	const [image, setImage] = useState(null);
 	const [addUser, setAddUser] = useState("");
 	const [isRecording, setIsRecording] = useState(false);
+	const [holdTime, setHoldTime] = useState(0);
+	const [intervalId, setIntervalId] = useState(null);
 	const [reply, setReply] = useState({replyId: "", replyUsername: "", replyText: "", replyImage: "", replyVideo: "", replyAudio: "", replyFile: {fileUrl: "", fileName: ""}});
 	const [fileAttachClicked, setFileAttachClicked] = useState(false);
+	const [slidePosition, setSlidePosition] = useState(0);
+	const [startX, setStartX] = useState(0);
+	const [isCancelled, setIsCancelled] = useState(false);
 
 	const mediaRecorderRef = useRef(null);
 	const audioChunksRef = useRef([]);
 
 	const imageInputRef = useRef(null);
-	const profileInputRef = useRef(null);
 	const scrollRef = useRef(null);
 
 	async function getMessages() {
@@ -214,14 +217,13 @@ export default function Chat() {
 	const startRecording = async () => {
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-			setIsRecording(true);
 			audioChunksRef.current = [];
 			mediaRecorderRef.current = new MediaRecorder(stream);
-		  
+			
 			mediaRecorderRef.current.ondataavailable = (event) => {
-			  audioChunksRef.current.push(event.data);
+				audioChunksRef.current.push(event.data);
 			};
-		  
+			
 			mediaRecorderRef.current.start();
 		} catch (error) {
 			if (error.name === 'NotAllowedError') {
@@ -232,29 +234,112 @@ export default function Chat() {
 				console.error('Error accessing microphone:', error);
 			}
 		}
-	  };
+		};
 	  
-	  const stopRecording = () => {
+	const stopRecording = () => {
 		if (mediaRecorderRef.current) {
-		  mediaRecorderRef.current.stop();
-		  mediaRecorderRef.current.onstop = async() => {
+			mediaRecorderRef.current.stop();
+			mediaRecorderRef.current.onstop = async() => {
 			const messageId = uuidv4();
 
 			const replyObj = {id: messageId, isReply: reply.replyId ? true : false, replyText: reply.replyText ? reply.replyText : "", replyImage: reply.replyImage, replyVideo: reply.replyVideo, replyAudio: reply.replyAudio, replyFile: {fileUrl: reply.replyFile.fileUrl, fileName: reply.replyFile.fileName}, replyUsername: reply.replyUsername}
-
-			setIsRecording(false);
-	  
+		
 			const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/mp3' });
 			const audioURL = URL.createObjectURL(audioBlob);
 			const audioFile = new File([audioBlob], 'voice.mp3', { type: 'audio/mp3' });
-	  
+		
 			socket.emit('send-voice', { username: userName, chatname, audioBlob, replyObj});
 			setMessages((m) => [...m, {...replyObj, text: '', image: {imageUrl: "", imageName: ""},voice: audioURL,video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}]);
 
 			await sendVoice(audioFile, messageId);
-		  };
+			};
 		}
-	  };
+	};
+
+	const startTimer = () => {
+		startRecording();
+		const id = setInterval(() => {
+			setHoldTime(prevTime => prevTime + 1);
+		}, 1000);
+		setIntervalId(id);
+	};
+
+	const stopTimer = () => {
+		clearInterval(intervalId);
+		setIntervalId(null);
+	};
+
+	const handleMouseDown = (e) => {
+		setIsRecording(true);
+		setHoldTime(0);
+		startTimer();
+		setStartX(e.clientX);
+		setSlidePosition(0);
+		setIsCancelled(false);
+	};
+
+	const handleMouseMove = (e) => {
+		if (isRecording) {
+			const diff = startX - e.clientX;
+			const newPosition = Math.min(Math.max(diff, 0), 200);
+			setSlidePosition(newPosition);
+			if (newPosition >= 200) {
+				setIsCancelled(true);
+			}
+		}
+	};
+
+	const handleMouseUp = () => {
+		setIsRecording(false);
+		stopTimer();
+		if (!isCancelled) {
+			stopRecording();
+		} else{
+			audioChunksRef.current = [];
+			mediaRecorderRef.current = null;
+		}
+		setSlidePosition(0);
+		setIsCancelled(false);
+	};
+
+	const handleTouchStart = (e) => {
+		setIsRecording(true);
+		setHoldTime(0);
+		startTimer();
+		setStartX(e.touches[0].clientX);
+		setSlidePosition(0);
+		setIsCancelled(false);
+	};
+
+	const handleTouchMove = (e) => {
+		if (isRecording) {
+			const diff = startX - e.touches[0].clientX;
+			const newPosition = Math.min(Math.max(diff, 0), 200);
+			setSlidePosition(newPosition);
+			if (newPosition >= 200) {
+				setIsCancelled(true);
+			}
+		}
+	};
+
+	const handleTouchEnd = () => {
+		setIsRecording(false);
+		stopTimer();
+		if (!isCancelled) {
+			stopRecording();
+		} else{
+			audioChunksRef.current = [];
+			mediaRecorderRef.current = null;
+		}
+		setSlidePosition(0);
+		setIsCancelled(false);
+	};
+
+	const formatTime = (seconds) => {
+		const minutes = Math.floor(seconds / 60);
+		const secs = seconds % 60;
+		return `${minutes}:${secs.toString().padStart(2, '0')}`;
+	};
 	
 	async function sendFile(e) {
 		const file = e.target.files[0];
@@ -576,14 +661,19 @@ export default function Chat() {
 		</div>
 		<div className="sticky bottom-0">
 			<div className='w-full flex items-center bg-[#1F1F1F] gap-4 py-4 justify-center relative'>
-				<FileSend onImageSelect={sendImage} onVideoSelect={sendVideo} onFileSelect={sendFile} isVisible={fileAttachClicked} />
-				<IoIosAttach className='text-[#7C01F6] w-8 h-8 cursor-pointer' onClick={() => setFileAttachClicked(f => !f)} />
 				<div className='relative bg-[#272626] sm:w-auto w-[60%]'>
+					<FileSend onImageSelect={sendImage} onVideoSelect={sendVideo} onFileSelect={sendFile} isVisible={fileAttachClicked} />
+					<IoIosAttach className='text-[#7C01F6] w-8 h-8 cursor-pointer absolute left-[-45px] top-1' onClick={() => setFileAttachClicked(f => !f)} />
 					<input type="text" placeholder='Type your message' onKeyDown={handleTyping} value={msg} onChange={(e) => setMsg(e.target.value)} className='rounded-md bg-transparent text-base pl-2 pr-7 w-full py-2 outline-none' />
 					<FaCamera className='text-[#7C01F6] absolute right-2 top-3 cursor-pointer' />
+					{isRecording && <div className='rounded-md bg-[#272626] text-slate-400 text-base pl-2 pr-7 w-full h-full py-2 outline-none absolute top-0 flex justify-between items-center'><p>{formatTime(holdTime)}</p><p>&lt; Slide to cancel</p></div>}
+					{!msg && (
+						<div onMouseMove={handleMouseMove} onTouchMove={handleTouchMove}>
+							<MdKeyboardVoice className={`${isRecording ? 'text-white w-24 h-24 bg-[#312F2F] p-6 rounded-full right-[-80px] -top-7' : 'text-[#7C01F6] w-8 h-8 right-[-45px] top-1'} absolute transition-all cursor-pointer`} style={{transform: `translateX(-${slidePosition}px)`,opacity: isCancelled ? 0.5 : 1}} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} />
+						</div>
+					)}
+					{msg && <BsFillSendFill className='text-[#7C01F6] w-8 h-8 cursor-pointer absolute right-[-45px] top-1' onClick={sendMessage} />}
 				</div>
-				{!msg && <MdKeyboardVoice className='text-[#7C01F6] w-8 h-8 cursor-pointer' />}
-				{msg && <BsFillSendFill className='text-[#7C01F6] w-8 h-8 cursor-pointer' onClick={sendMessage} />}
 			</div>
 		</div>
 		</div>
