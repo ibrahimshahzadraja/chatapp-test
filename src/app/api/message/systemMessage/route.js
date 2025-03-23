@@ -8,6 +8,13 @@ export async function POST(req) {
 
     await dbConnect();
 
+    const authData = await auth(req);
+    const userId = req.userId;
+    
+    if(!authData.isAuthorized || !userId) {
+        return new ApiResponse("Unauthorized", null, false, 401);
+    }
+
     const { chatname, text, id } = await req.json();
 
     if(!text){

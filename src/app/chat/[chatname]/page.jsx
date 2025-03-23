@@ -35,6 +35,9 @@ export default function Chat() {
 	const [slidePosition, setSlidePosition] = useState(0);
 	const [startX, setStartX] = useState(0);
 	const [isCancelled, setIsCancelled] = useState(false);
+    const [showMentionMenu, setShowMentionMenu] = useState(false);
+    const [mentionFilter, setMentionFilter] = useState('');
+    const [cursorPosition, setCursorPosition] = useState(0);
 
 	const mediaRecorderRef = useRef(null);
 	const audioChunksRef = useRef([]);
@@ -444,6 +447,17 @@ export default function Chat() {
 	
 			socket.on("userJoin", (username, text, profilePicture) => {
 				setMessages(m => [...m, {text, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				setChatDetails(prevDetails => ({
+                    ...prevDetails,
+                    memberDetails: [...prevDetails.memberDetails, {
+                        isAdmin: false,
+                        isBanned: false,
+                        isOwner: false,
+                        username,
+                        profilePicture
+                    }],
+                    memberUsernames: [...prevDetails.memberUsernames, username]
+                }));
 			});
 	
 			socket.on("userLeft", (username) => {
@@ -564,6 +578,37 @@ export default function Chat() {
 		saveAs(blob, fileName);
 	};
 
+    const handleInputChange = (e) => {
+        const value = e.target.value;
+        const position = e.target.selectionStart;
+        setMsg(value);
+        setCursorPosition(position);
+
+        const lastAtSymbolIndex = value.lastIndexOf('@', position);
+        if (lastAtSymbolIndex !== -1) {
+            const afterAtSymbol = value.slice(lastAtSymbolIndex + 1, position);
+            setMentionFilter(afterAtSymbol);
+            setShowMentionMenu(true);
+        } else {
+            setShowMentionMenu(false);
+        }
+    };
+
+    const handleMemberSelect = (username) => {
+        const lastAtSymbolIndex = msg.lastIndexOf('@', cursorPosition);
+        const beforeAt = msg.slice(0, lastAtSymbolIndex);
+        const afterCursor = msg.slice(cursorPosition);
+        
+        const newMsg = `${beforeAt}@${username}${afterCursor}`;
+        setMsg(newMsg);
+        setShowMentionMenu(false);
+        setMentionFilter('');
+    };
+
+    const filteredMembers = chatDetails.memberDetails?.filter(member => 
+        mentionFilter === '' || member.username.toLowerCase().includes(mentionFilter.toLowerCase())
+    );
+
     if(!chatDetails.isAuthorized){
         return(
             <div>Loading...</div>
@@ -671,7 +716,29 @@ export default function Chat() {
 				<div className='relative bg-[#272626] sm:w-auto w-[60%]'>
 					<FileSend onImageSelect={sendImage} onVideoSelect={sendVideo} onFileSelect={sendFile} isVisible={fileAttachClicked} />
 					<IoIosAttach className='text-[#7C01F6] w-8 h-8 cursor-pointer absolute left-[-45px] top-1' onClick={() => setFileAttachClicked(f => !f)} />
-					<input type="text" placeholder='Type your message' onKeyDown={handleTyping} value={msg} onChange={(e) => setMsg(e.target.value)} className='rounded-md bg-transparent text-base pl-2 pr-7 w-full py-2 outline-none' />
+					<input type="text" placeholder='Type your message' onKeyDown={handleTyping} value={msg} onChange={handleInputChange} className='rounded-md bg-transparent text-base pl-2 pr-7 w-full py-2 outline-none' />
+					{showMentionMenu && filteredMembers?.length > 0 && (
+						<div className='overflow-y-auto absolute bottom-16 max-h-[276px] bg-[#200F2F] shadow-md shadow-black w-[250px] p-2'>
+							{filteredMembers.map((member, index) => (
+							<div key={index} className='hover:bg-[#2d1846] transition-colors border-b-[1px] border-gray-600 cursor-pointer' onClick={() => handleMemberSelect(member.username)}>
+								<div className='flex items-center gap-5 py-2 relative'>
+									<img src={member.profilePicture} alt="User profile" className='rounded-full w-12 h-12 border-4 border-[#2B2B2B]' />
+									<div>
+										<p className='text-md font-semibold'>
+											{member.username} 
+											{(member.isOwner || member.isAdmin) && 
+												<span className='bg-[#272626] p-1 rounded-lg text-xs font-light mx-2'>Admin</span>
+											} 
+											{member.isBanned && 
+												<span className='bg-[#272626] p-1 rounded-lg text-xs font-light mx-2'>Banned</span>
+											}
+										</p>
+										<p className='text-[#00FF85] text-xs'>Online</p>
+									</div>
+								</div>
+							</div>))}
+						</div>
+					)}
 					<FaCamera className='text-[#7C01F6] absolute right-2 top-3 cursor-pointer' />
 					{isRecording && <div className='rounded-md bg-[#272626] text-slate-400 text-base pl-2 pr-7 w-full h-full py-2 outline-none absolute top-0 flex justify-between items-center'><p>{formatTime(holdTime)}</p><p>&lt; Slide to cancel</p></div>}
 					{!msg && (
@@ -685,5 +752,5 @@ export default function Chat() {
 		</div>
 		</div>
 	</>
-	  );
+	);
 }
