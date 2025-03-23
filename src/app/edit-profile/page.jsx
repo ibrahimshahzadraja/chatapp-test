@@ -23,7 +23,10 @@ export default function EditProfile() {
             return;
         }
 
-        const formData = new FormData(document.getElementById("update-profile-form"));
+        const formData = new FormData();
+        formData.append("username", d.username == localStorage.getItem("username") ? "" : d.username);
+        formData.append("password", d.password);
+        formData.append("profilePicture", d.profilePicture);
 
         try {
             const response = await fetch("/api/users/updateProfile",

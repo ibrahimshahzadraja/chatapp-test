@@ -20,6 +20,9 @@ export default function Login(){
           const data = await response.json();
           console.log(data);
           if(data.success){
+            localStorage.setItem("username", "");
+            localStorage.setItem("email", "");
+            localStorage.setItem("profilePicture", "");
             toast.success(data.message);
             router.push("/");
           } else if(data.success && !data.data?.isVerified){
