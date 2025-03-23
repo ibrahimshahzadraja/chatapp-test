@@ -286,7 +286,7 @@ export default function Chat() {
 			const diff = startX - e.clientX;
 			const newPosition = Math.min(Math.max(diff, 0), 200);
 			setSlidePosition(newPosition);
-			if (newPosition >= 200) {
+			if (newPosition >= 130) {
 				setIsCancelled(true);
 			}
 		}
