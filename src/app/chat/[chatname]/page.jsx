@@ -286,7 +286,7 @@ export default function Chat() {
 			const diff = startX - e.clientX;
 			const newPosition = Math.min(Math.max(diff, 0), 200);
 			setSlidePosition(newPosition);
-			if (newPosition >= 130) {
+			if (newPosition >= 100) {
 				setIsCancelled(true);
 			}
 		}
@@ -296,7 +296,9 @@ export default function Chat() {
 		setIsRecording(false);
 		stopTimer();
 		if (!isCancelled) {
-			stopRecording();
+			if(holdTime >= 2){
+				stopRecording();
+			}
 		} else{
 			audioChunksRef.current = [];
 			mediaRecorderRef.current = null;
@@ -319,7 +321,7 @@ export default function Chat() {
 			const diff = startX - e.touches[0].clientX;
 			const newPosition = Math.min(Math.max(diff, 0), 200);
 			setSlidePosition(newPosition);
-			if (newPosition >= 200) {
+			if (newPosition >= 100) {
 				setIsCancelled(true);
 			}
 		}
@@ -329,7 +331,9 @@ export default function Chat() {
 		setIsRecording(false);
 		stopTimer();
 		if (!isCancelled) {
-			stopRecording();
+			if(holdTime >= 2){
+				stopRecording();
+			}
 		} else{
 			audioChunksRef.current = [];
 			mediaRecorderRef.current = null;
@@ -617,7 +621,7 @@ export default function Chat() {
 
 	return (
 		<>
-		<div className='h-screen flex flex-col'>
+		<div className='h-screen flex flex-col overflow-hidden'>
 		<div className='w-full flex items-center bg-[#1F1F1F] sm:gap-4 gap-2 p-2 sticky top-0 z-10'>
 			<Link href={'/'}>
 				<FaArrowLeft className='sm:ml-4' />
@@ -626,7 +630,7 @@ export default function Chat() {
 				<img src={chatDetails.profilePicture} alt="Chat Profile" className='w-16 h-16 rounded-full border-2 border-black' />
 				<div>
 					<h1 className='font-semibold text-xl'>{chatDetails.chatname}</h1>
-					<p className='text-[#00FF85]'>You, {chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ").length > 20 ? chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ").split(0, 20) + "..." : chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ")}</p>
+					<p className='text-[#00FF85] sm:text-base text-xs whitespace-nowrap overflow-hidden text-ellipsis w-[50vw]'>You, {chatDetails.memberUsernames?.filter(uname => uname !== userName).join(", ")}</p>
 				</div>
 			</Link>
 		</div>
@@ -711,7 +715,7 @@ export default function Chat() {
 			))}
 			{isTyping && <p className='bg-gray-900 text-gray-300 px-3 py-2 my-2 mx-2 rounded-md w-fit'>User is typing...</p>}
 		</div>
-		<div className="sticky bottom-0">
+		<div className="sticky bottom-0 select-none">
 			<div className='w-full flex items-center bg-[#1F1F1F] gap-4 py-4 justify-center relative'>
 				<div className='relative bg-[#272626] sm:w-auto w-[60%]'>
 					<FileSend onImageSelect={sendImage} onVideoSelect={sendVideo} onFileSelect={sendFile} isVisible={fileAttachClicked} />
