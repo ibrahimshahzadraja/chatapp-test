@@ -25,6 +25,8 @@ export async function POST(req){
     const user = await User.findOne({_id: new mongoose.Types.ObjectId(userId)});
 
     let isPasswordChanged = false;
+    let isUsernameChanged = false;
+    let isProfilePictureChanged = false;
 
     if(!user){
         return new ApiResponse("User not found", null, false, 400)
@@ -40,6 +42,7 @@ export async function POST(req){
             return new ApiResponse("Username already exists", null, false, 400);
         }
         user.username = username;
+        isUsernameChanged = true;
     }
     if(password){
         const verifyCode = Math.floor(100000 + Math.random() * 900000);
@@ -55,12 +58,13 @@ export async function POST(req){
     if(profilePicture.size){
         let url = await uploadOnCloudinary(profilePicture, 'image');
         user.profilePicture = url;
+        isProfilePictureChanged = true;
     }
 
     await user.save();
 
     if(isPasswordChanged){
-        const response = new ApiResponse("Profile updated successfully", {...user.toObject(), isPasswordChanged}, true, 200);
+        const response = new ApiResponse("Profile updated successfully", {username: user.username, profilePicture: user.profilePicture, isUsernameChanged, isPasswordChanged, isProfilePictureChanged}, true, 200);
         response.cookies.set('accessToken', '', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -88,7 +92,7 @@ export async function POST(req){
         return response;
 
     } else{
-        const response = new ApiResponse("Profile updated successfully", {...user.toObject(), isPasswordChanged}, true, 200);
+        const response = new ApiResponse("Profile updated successfully", {username: user.username, profilePicture: user.profilePicture, isUsernameChanged, isPasswordChanged, isProfilePictureChanged}, true, 200);
         if(authData.tokenChanged){
             response.cookies.set('accessToken', authData.accessToken, {
                 httpOnly: true,

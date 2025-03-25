@@ -61,7 +61,7 @@ export default function ChatPage() {
     }, [])
 
     useEffect(() => {
-        if(!localStorage.getItem("username")){
+        if(!localStorage.getItem("username") || !localStorage.getItem("email") || !localStorage.getItem("profilePicture")){
             getUser();
         }
     }, [])

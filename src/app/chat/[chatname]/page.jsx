@@ -433,7 +433,7 @@ export default function Chat() {
 				router.push("/");
 			}
 		}
-		if(!localStorage.getItem("username")){
+		if(!localStorage.getItem("username") || !localStorage.getItem("email") || !localStorage.getItem("profilePicture")){
 			getUser();
 		} else{
 			setUserName(localStorage.getItem("username"));

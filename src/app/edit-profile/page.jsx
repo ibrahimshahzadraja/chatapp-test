@@ -26,7 +26,7 @@ export default function EditProfile() {
         const formData = new FormData();
         formData.append("username", d.username == localStorage.getItem("username") ? "" : d.username);
         formData.append("password", d.password);
-        formData.append("profilePicture", d.profilePicture);
+        formData.append("profilePicture", d.profilePicture[0]);
 
         try {
             const response = await fetch("/api/users/updateProfile",
@@ -35,8 +35,15 @@ export default function EditProfile() {
                     body: formData,
                 })
             const data = await response.json();
-
             console.log(data)
+            if(data.success){
+                if(data.data.isUsernameChanged){
+                    localStorage.setItem("username", data.data.username);
+                }
+                if(data.data.isProfilePictureChanged){
+                    localStorage.setItem("profilePicture", data.data.profilePicture);
+                }
+            }
 
             if(data.success && data.data.isPasswordChanged){
                 toast.info("Profile updated successfully! To change password verify your email");
@@ -80,7 +87,7 @@ export default function EditProfile() {
     }
 
     useEffect(() => {
-        if(!localStorage.getItem("username")){
+        if(!localStorage.getItem("username") || !localStorage.getItem("email") || !localStorage.getItem("profilePicture")){
             getUser();
         } else{
             setImageUrl(localStorage.getItem("profilePicture"));

@@ -40,7 +40,7 @@ export default function Profile() {
     }
 
     useEffect(() => {
-        if(!localStorage.getItem("username")){
+        if(!localStorage.getItem("username") || !localStorage.getItem("email") || !localStorage.getItem("profilePicture")){
             getUser();
         } else{
             setUserDetails(p => ({...p, username: localStorage.getItem("username"), email: localStorage.getItem("email"), profilePicture: localStorage.getItem("profilePicture")}));
