@@ -6,7 +6,7 @@ import { FaRegFile } from "react-icons/fa";
 
 export default function FileSend({ onImageSelect, onVideoSelect, onFileSelect, isVisible }) {
   return (
-    <div className={`w-28 h-36 bg-[#200F2F] rounded-md flex flex-col divide-y divide-gray-700 absolute bottom-10 shadow-md shadow-black left-1/2 sm:-translate-x-[175%] -translate-x-[150%] z-50 ${isVisible ? "block" : "hidden"}`}>
+    <div className={`w-28 h-36 bg-[#200F2F] rounded-md flex flex-col divide-y divide-gray-700 absolute bottom-2 sm:-left-[85px] -left-[50px] shadow-md shadow-black z-50 ${isVisible ? "block" : "hidden"}`}>
         <div className='relative hover:bg-[#2d1846] rounded-sm transition-colors'>
             <div className='flex items-center gap-2 px-3 py-3 cursor-pointer'>
                 <MdOutlineImage className='text-[#6509C0] w-6 h-6' />

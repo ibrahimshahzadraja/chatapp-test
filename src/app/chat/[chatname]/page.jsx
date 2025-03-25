@@ -717,9 +717,11 @@ export default function Chat() {
 		</div>
 		<div className="sticky bottom-0 select-none">
 			<div className='w-full flex items-center bg-[#1F1F1F] gap-4 py-4 justify-center relative'>
-				<div className='relative bg-[#272626] sm:w-auto w-[60%]'>
-					<FileSend onImageSelect={sendImage} onVideoSelect={sendVideo} onFileSelect={sendFile} isVisible={fileAttachClicked} />
-					<IoIosAttach className='text-[#7C01F6] w-8 h-8 cursor-pointer absolute left-[-45px] top-1' onClick={() => setFileAttachClicked(f => !f)} />
+				<div className='relative bg-[#272626] w-[60%]'>
+					<div className="relative">
+						<IoIosAttach className='text-[#7C01F6] w-8 h-8 cursor-pointer absolute left-[-45px] top-1' onClick={() => setFileAttachClicked(f => !f)} />
+						<FileSend onImageSelect={sendImage} onVideoSelect={sendVideo} onFileSelect={sendFile} isVisible={fileAttachClicked} />
+					</div>
 					<input type="text" placeholder='Type your message' onKeyDown={handleTyping} value={msg} onChange={handleInputChange} className='rounded-md bg-transparent text-base pl-2 pr-7 w-full py-2 outline-none' />
 					{showMentionMenu && filteredMembers?.length > 0 && (
 						<div className='overflow-y-auto absolute bottom-16 max-h-[276px] bg-[#200F2F] shadow-md shadow-black w-[250px] p-2'>
@@ -745,7 +747,7 @@ export default function Chat() {
 					)}
 					<FaCamera className='text-[#7C01F6] absolute right-2 top-3 cursor-pointer' />
 					{isRecording && <div className='rounded-md bg-[#272626] text-slate-400 text-base pl-2 pr-7 w-full h-full py-2 outline-none absolute top-0 flex justify-between items-center'><p>{formatTime(holdTime)}</p><p>&lt; Slide to cancel</p></div>}
-					{!msg && (
+					{!msg && window.innerWidth < 600 && (
 						<div onMouseMove={handleMouseMove} onTouchMove={handleTouchMove}>
 							<MdKeyboardVoice className={`${isRecording ? 'text-white w-24 h-24 bg-[#312F2F] p-6 rounded-full right-[-80px] -top-7' : 'text-[#7C01F6] w-8 h-8 right-[-45px] top-1'} absolute transition-all cursor-pointer`} style={{transform: `translateX(-${slidePosition}px)`,opacity: isCancelled ? 0.5 : 1}} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} />
 						</div>
