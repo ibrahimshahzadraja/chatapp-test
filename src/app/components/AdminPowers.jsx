@@ -2,7 +2,7 @@
 import React from 'react'
 import { socket } from '@/socket';
 
-export default function AdminPowers({ isVisible, member, setChatDetails, chatname }) {
+export default function AdminPowers({ isVisible, member, setChatDetails, chatname, setShowAdminSideMenu }) {
 
   async function sendSystemMessage(text) {
     const response = await fetch("/api/message/systemMessage", {
@@ -71,6 +71,7 @@ async function toggleAdmin(username, type) {
     const data = await response.json();
 
     if(data.success){
+        setShowAdminSideMenu(p => !p);
         setChatDetails(prevDetails => ({
             ...prevDetails,
             memberDetails: prevDetails.memberDetails.map(member => 

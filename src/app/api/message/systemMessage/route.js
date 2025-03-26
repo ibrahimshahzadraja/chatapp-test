@@ -3,6 +3,7 @@ import { dbConnect } from "@/dbConfig/dbConfig";
 import ApiResponse from "@/helpers/ApiResponse";
 import mongoose from "mongoose";
 import Chat from "@/models/Chat";
+import auth from "@/helpers/auth";
 
 export async function POST(req) {
 

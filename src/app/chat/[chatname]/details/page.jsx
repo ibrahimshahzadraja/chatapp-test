@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { FaArrowLeft } from "react-icons/fa6";
 import Link from 'next/link';
 import { IoMdMore } from "react-icons/io";
+import { FiPlus } from "react-icons/fi";
 import { FaPencil } from "react-icons/fa6";
 import { BsSearch } from "react-icons/bs";
 import AdminPowers from '@/app/components/AdminPowers';
@@ -12,6 +13,7 @@ import { FiLogOut } from "react-icons/fi";
 import { MdDeleteOutline } from "react-icons/md";
 import AdminSideMenu from '@/app/components/AdminSideMenu';
 import { toast } from 'react-toastify';
+import { IoClose } from "react-icons/io5";
 
 export default function Details() {
 
@@ -23,6 +25,8 @@ export default function Details() {
     const [userName, setUserName] = useState("");
     const [selectedMember, setSelectedMember] = useState(null);
     const [showAdminSideMenu, setShowAdminSideMenu] = useState(false);
+    const [showSearch, setShowSearch] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
     
 	async function getChatDetails() {
 		try {
@@ -61,6 +65,9 @@ export default function Details() {
                 const data = await response.json();
 
                 if(data.success){
+                    localStorage.setItem("username", data.data.username);
+                    localStorage.setItem("email", data.data.email);
+                    localStorage.setItem("profilePicture", data.data.profilePicture);
                     setUserName(data.data.username);
                 }
         }
@@ -126,7 +133,11 @@ export default function Details() {
 	}
 
     useEffect(() => {
-        getUser();
+        if(!localStorage.getItem("username") || !localStorage.getItem("email") || !localStorage.getItem("profilePicture")){
+			getUser();
+		} else{
+			setUserName(localStorage.getItem("username"));
+		}
         getChatDetails();
     }, [])
 
@@ -202,6 +213,11 @@ export default function Details() {
         }
     }, [userName])
 
+    const handleSearchClose = () => {
+        setShowSearch(false);
+        setSearchQuery("");
+    };
+
     const handleMoreClick = (index) => {
         setSelectedMember(selectedMember === index ? null : index);
     };
@@ -214,6 +230,7 @@ export default function Details() {
         </Link>
         {chatDetails.isOwner && <IoMdMore className='absolute top-4 right-6 h-7 w-7 cursor-pointer' onClick={() => setShowAdminSideMenu(p => !p)} />}
         {showAdminSideMenu && <AdminSideMenu setChatDetails={setChatDetails} chatname={chatname} /> }
+        {(chatDetails.isAdmin || chatDetails.isOwner) && <FiPlus className='absolute top-4 right-14 h-7 w-7 cursor-pointer' />}
         <div className='flex flex-col justify-center items-center my-3'>
             <div className='relative'>
                 <img src={chatDetails.profilePicture || "/images/default-icon.jpeg"} alt="User profile image" className='rounded-full w-24 h-24' />
@@ -228,46 +245,53 @@ export default function Details() {
         </div>
     </div>
     <div className='px-6 h-[60vh]'>
-        <div className='flex justify-between items-center my-5'>
-            <p className='text-2xl font-thin'>Members ({chatDetails.memberDetails?.length})</p>
-            <BsSearch className='h-6 w-6 mx-4 cursor-pointer' />
+        <div className='flex justify-between items-center my-5 relative'>
+            <p className='sm:text-2xl text-lg font-thin'>Members ({chatDetails.memberDetails?.length})</p>
+            <div className="relative">
+                <input type="text" placeholder="Search members..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={`bg-[#272626] rounded-lg sm:px-5 px-2 py-1 sm:text-base text-sm outline-none ${showSearch ? 'block' : 'hidden'}`}/>
+                {showSearch ? (
+                    <IoClose className='sm:h-6 sm:w-6 sm:mx-4 cursor-pointer absolute sm:top-1 sm:-right-3 right-1 top-[6px]' onClick={handleSearchClose}/>
+                ) : (<BsSearch className='sm:h-6 sm:w-6 sm:mx-4 cursor-pointer' onClick={() => setShowSearch(true)}/>)}
+            </div>
         </div>
         <div className='h-[80%] overflow-y-auto'>
-            {chatDetails.memberDetails?.map((member, index) => (
-                <div key={index}>
-                    <div className='flex items-center gap-5 my-2 relative'>
-                        <img src={member.profilePicture} alt="User profile" className='rounded-full w-16 h-16 border-4 border-[#2B2B2B]' />
-                        <div>
-                            <p className='text-lg font-semibold'>
-                                {member.username} 
-                                {(member.isOwner || member.isAdmin) && 
-                                    <span className='bg-[#272626] p-1 rounded-lg text-xs font-light mx-2'>Admin</span>
-                                } 
-                                {member.isBanned && 
-                                    <span className='bg-[#272626] p-1 rounded-lg text-xs font-light mx-2'>Banned</span>
-                                }
-                            </p>
-                            <p className='text-[#00FF85]'>Online</p>
+            {chatDetails.memberDetails
+                ?.filter(member => member.username.toLowerCase().includes(searchQuery.toLowerCase()))
+                ?.map((member, index) => (
+                    <div key={index}>
+                        <div className='flex items-center gap-5 my-2 relative'>
+                            <img src={member.profilePicture} alt="User profile" className='rounded-full w-16 h-16 border-4 border-[#2B2B2B]' />
+                            <div>
+                                <p className='text-lg font-semibold'>
+                                    {member.username === userName ? "You" : member.username}
+                                    {(member.isOwner || member.isAdmin) && 
+                                        <span className='bg-[#272626] p-1 rounded-lg text-xs font-light mx-2'>Admin</span>
+                                    } 
+                                    {member.isBanned && 
+                                        <span className='bg-[#272626] p-1 rounded-lg text-xs font-light mx-2'>Banned</span>
+                                    }
+                                </p>
+                                <p className='text-[#00FF85]'>Online</p>
+                            </div>
+                            {(chatDetails.isOwner || chatDetails.isAdmin) && 
+                            !member.isOwner && 
+                            member.username !== userName && 
+                                <AdminPowers isVisible={selectedMember === index} member={member} chatname={chatname} setChatDetails={setChatDetails} setShowAdminSideMenu={setShowAdminSideMenu} />
+                            }
+                            {(chatDetails.isOwner || chatDetails.isAdmin) && 
+                            !member.isOwner && 
+                            member.username !== userName && 
+                                <IoMdMore 
+                                    className='absolute top-4 right-6 h-7 w-7 cursor-pointer' 
+                                    onClick={() => handleMoreClick(index)} 
+                                />
+                            }
                         </div>
-                        {(chatDetails.isOwner || chatDetails.isAdmin) && 
-                        !member.isOwner && 
-                        member.username !== userName && 
-                            <AdminPowers isVisible={selectedMember === index} member={member} chatname={chatname} setChatDetails={setChatDetails} />
-                        }
-                        {(chatDetails.isOwner || chatDetails.isAdmin) && 
-                        !member.isOwner && 
-                        member.username !== userName && 
-                            <IoMdMore 
-                                className='absolute top-4 right-6 h-7 w-7 cursor-pointer' 
-                                onClick={() => handleMoreClick(index)} 
-                            />
-                        }
+                        <div className='bg-[#434343] sm:h-[2px] h-[1px]'></div>
                     </div>
-                    <div className='bg-[#434343] sm:h-[2px] h-[1px]'></div>
-                </div>
-            ))}
+                ))}
         </div>
-        <div className='absolute bottom-5 left-5 text-lg font-semibold cursor-pointer'>
+        <div className='absolute bottom-0 left-5 text-lg font-semibold cursor-pointer'>
             {!chatDetails.isOwner && <div className='flex items-center gap-2' onClick={leaveChat}>
                 <FiLogOut />
                 <p>Leave Convo</p>
