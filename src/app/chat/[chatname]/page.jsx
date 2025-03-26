@@ -9,6 +9,7 @@ import { FaArrowLeft } from "react-icons/fa6";
 import Link from 'next/link';
 import { IoIosAttach } from "react-icons/io";
 import { MdKeyboardVoice } from "react-icons/md";
+import { MdDeleteOutline } from "react-icons/md";
 import { FaCamera } from "react-icons/fa";
 import { BsFillSendFill } from "react-icons/bs";
 import FileSend from '@/app/components/FileSend';
@@ -38,6 +39,7 @@ export default function Chat() {
     const [showMentionMenu, setShowMentionMenu] = useState(false);
     const [mentionFilter, setMentionFilter] = useState('');
     const [cursorPosition, setCursorPosition] = useState(0);
+    const [isDesktopRecording, setIsDesktopRecording] = useState(false);
 
 	const mediaRecorderRef = useRef(null);
 	const audioChunksRef = useRef([]);
@@ -217,7 +219,7 @@ export default function Chat() {
 		const data = await response.json();
 	}
 
-	const startRecording = async () => {
+	const startRecording = async (type) => {
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 			audioChunksRef.current = [];
@@ -228,6 +230,15 @@ export default function Chat() {
 			};
 			
 			mediaRecorderRef.current.start();
+			startTimer();
+			setHoldTime(0);
+			if(type === "Desktop"){
+				setIsDesktopRecording(true);
+			} else{
+				setIsRecording(true);
+				setSlidePosition(0);
+				setIsCancelled(false);
+			}
 		} catch (error) {
 			if (error.name === 'NotAllowedError') {
 				alert('Please enable microphone access in your browser or mobile settings.');
@@ -259,8 +270,20 @@ export default function Chat() {
 		}
 	};
 
+	const startDesktopRecording = () => {
+		startRecording("Desktop");
+	};
+
+	const stopDesktopRecording = () => {
+		setIsDesktopRecording(false);
+        stopTimer();
+		setHoldTime(0);
+		if(holdTime >= 1){
+			stopRecording();
+		}
+    };
+
 	const startTimer = () => {
-		startRecording();
 		const id = setInterval(() => {
 			setHoldTime(prevTime => prevTime + 1);
 		}, 1000);
@@ -272,48 +295,20 @@ export default function Chat() {
 		setIntervalId(null);
 	};
 
-	const handleMouseDown = (e) => {
-		setIsRecording(true);
-		setHoldTime(0);
-		startTimer();
-		setStartX(e.clientX);
-		setSlidePosition(0);
-		setIsCancelled(false);
-	};
-
-	const handleMouseMove = (e) => {
-		if (isRecording) {
-			const diff = startX - e.clientX;
-			const newPosition = Math.min(Math.max(diff, 0), 200);
-			setSlidePosition(newPosition);
-			if (newPosition >= 100) {
-				setIsCancelled(true);
-			}
-		}
-	};
-
-	const handleMouseUp = () => {
-		setIsRecording(false);
-		stopTimer();
-		if (!isCancelled) {
-			if(holdTime >= 2){
-				stopRecording();
-			}
-		} else{
+	const cancelDesktopRecording = () => {
+		if (mediaRecorderRef.current) {
+			mediaRecorderRef.current.stop();
 			audioChunksRef.current = [];
 			mediaRecorderRef.current = null;
 		}
-		setSlidePosition(0);
-		setIsCancelled(false);
+		setIsDesktopRecording(false);
+        stopTimer();
+        setHoldTime(0);
 	};
 
 	const handleTouchStart = (e) => {
-		setIsRecording(true);
-		setHoldTime(0);
-		startTimer();
+		startRecording("Mobile");
 		setStartX(e.touches[0].clientX);
-		setSlidePosition(0);
-		setIsCancelled(false);
 	};
 
 	const handleTouchMove = (e) => {
@@ -331,7 +326,7 @@ export default function Chat() {
 		setIsRecording(false);
 		stopTimer();
 		if (!isCancelled) {
-			if(holdTime >= 2){
+			if(holdTime >= 1){
 				stopRecording();
 			}
 		} else{
@@ -482,7 +477,7 @@ export default function Chat() {
 			});
 			
 			socket.on("roomDeleted", (message) => {
-				router.push("/");
+				router.push("/")
 			})
 
 			socket.on("chatChanged", (text) => {
@@ -747,11 +742,29 @@ export default function Chat() {
 					)}
 					<FaCamera className='text-[#7C01F6] absolute right-2 top-3 cursor-pointer' />
 					{isRecording && <div className='rounded-md bg-[#272626] text-slate-400 text-base pl-2 pr-7 w-full h-full py-2 outline-none absolute top-0 flex justify-between items-center'><p>{formatTime(holdTime)}</p><p>&lt; Slide to cancel</p></div>}
-					{!msg && window.innerWidth < 600 && (
-						<div onMouseMove={handleMouseMove} onTouchMove={handleTouchMove}>
-							<MdKeyboardVoice className={`${isRecording ? 'text-white w-24 h-24 bg-[#312F2F] p-6 rounded-full right-[-80px] -top-7' : 'text-[#7C01F6] w-8 h-8 right-[-45px] top-1'} absolute transition-all cursor-pointer`} style={{transform: `translateX(-${slidePosition}px)`,opacity: isCancelled ? 0.5 : 1}} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} />
-						</div>
-					)}
+					{!msg && (
+                        <>
+                            {window.innerWidth < 600 ? (
+                                <div onTouchMove={handleTouchMove}>
+                                    <MdKeyboardVoice className={`${isRecording ? 'text-white w-24 h-24 bg-[#312F2F] p-6 rounded-full right-[-80px] -top-7' : 'text-[#7C01F6] w-8 h-8 right-[-45px] top-1'} absolute transition-all cursor-pointer`} style={{transform: `translateX(-${slidePosition}px)`,opacity: isCancelled ? 0.5 : 1}} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} />
+                                </div>
+                            ) : (
+                                <div className="absolute right-[-45px] top-1">
+                                    {isDesktopRecording ? (
+                                        <BsFillSendFill className='text-[#7C01F6] w-8 h-8 cursor-pointer' onClick={stopDesktopRecording} />
+                                    ) : (
+                                        <MdKeyboardVoice className='text-[#7C01F6] w-8 h-8 cursor-pointer' onClick={startDesktopRecording} />
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {isDesktopRecording && (
+                        <div className='rounded-md bg-[#272626] text-slate-400 text-base pl-2 pr-7 w-full h-full py-2 outline-none absolute top-0 flex justify-between items-center'>
+                            <p>{formatTime(holdTime)}</p>
+                            <MdDeleteOutline className="text-red-500 w-6 h-6 cursor-pointer" onClick={cancelDesktopRecording}/>
+                        </div>
+                    )}
 					{msg && <BsFillSendFill className='text-[#7C01F6] w-8 h-8 cursor-pointer absolute right-[-45px] top-1' onClick={sendMessage} />}
 				</div>
 			</div>
