@@ -27,9 +27,11 @@ async function kick(username) {
     const data = await response.json();
 
     if(data.success){
+        console.log(username);
         setChatDetails(prevDetails => ({
             ...prevDetails,
-            memberDetails: prevDetails.memberDetails.filter(member => member.username !== username)
+            memberDetails: prevDetails.memberDetails.filter(member => member.username !== username),
+            memberUsernames: prevDetails.memberUsernames.filter(member => member !== username)
         }));
         socket.emit("kicked", {chatname, username, userAdmin: data.data.user});
         await sendSystemMessage(`${data.data.user} kicked ${username}`);
@@ -86,7 +88,7 @@ async function toggleAdmin(username, type) {
 }
 
   return (
-    <div className={`w-28 bg-[#200F2F] rounded-md absolute right-16 flex flex-col z-50 divide-y divide-gray-700 ${isVisible ? "block" : "hidden"}`}>
+    <div className={`w-28 bg-[#200F2F] select-none rounded-md absolute right-16 flex flex-col z-50 divide-y divide-gray-700 ${isVisible ? "block" : "hidden"}`}>
         {(!member.isBanned && !member.isAdmin) && <p onClick={() => kick(member.username)} className='text-[#6509C0] text-center rounded-sm py-3 cursor-pointer hover:bg-[#2d1846] transition-colors'>Kick</p>}
         {(!member.isAdmin || member.isBanned) && <p onClick={() => ban(member.username, member.isBanned?"Unban":"Ban")} className='text-[#6509C0] text-center rounded-sm py-3 cursor-pointer hover:bg-[#2d1846] transition-colors'>{member.isBanned? "Unban" : "Ban"}</p>}
         {!member.isBanned && <p onClick={() => toggleAdmin(member.username, member.isAdmin?"Remove":"Make")} className='text-[#6509C0] text-center rounded-sm py-3 cursor-pointer text-sm hover:bg-[#2d1846] transition-colors'>{member.isAdmin? "Remove Admin": "Make Admin"}</p>}

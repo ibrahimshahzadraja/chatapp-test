@@ -1,5 +1,5 @@
 "use client"
-import React, {useState, useEffect} from 'react'
+import React, {useState, useEffect, useRef} from 'react'
 import { useParams, useRouter } from 'next/navigation';
 import { FaArrowLeft } from "react-icons/fa6";
 import Link from 'next/link';
@@ -14,6 +14,7 @@ import { MdDeleteOutline } from "react-icons/md";
 import AdminSideMenu from '@/app/components/AdminSideMenu';
 import { toast } from 'react-toastify';
 import { IoClose } from "react-icons/io5";
+import { IoPersonAdd } from "react-icons/io5";
 
 export default function Details() {
 
@@ -23,10 +24,13 @@ export default function Details() {
 
     const [chatDetails, setChatDetails] = useState({});
     const [userName, setUserName] = useState("");
+    const [addUser, setAddUser] = useState("");
     const [selectedMember, setSelectedMember] = useState(null);
     const [showAdminSideMenu, setShowAdminSideMenu] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [showAddUser, setShowAddUser] = useState(false);
+    const addUserRef = useRef(null);
     
 	async function getChatDetails() {
 		try {
@@ -39,7 +43,7 @@ export default function Details() {
 			});
 			const data = await response.json();
 
-			console.log(data.data);
+            console.log(data.data);
 
             if(!data.data.isAuthorized){
                 router.push("/");
@@ -132,6 +136,32 @@ export default function Details() {
 		}
 	}
 
+    async function adduser() {
+        setShowAddUser(p => !p);
+        setSelectedMember(null);
+        if(!addUser) return;
+        setAddUser("");
+        const response = await fetch("/api/chat/addUser", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({chatname, username: addUser}),
+        });
+
+        const data = await response.json();
+
+        console.log(data);
+
+        if(data.success){
+            toast.success(data.message);
+            socket.emit("userJoined", {chatname, username: data.data.username, text: `${userName} added ${data.data.username}`, profilePicture: data.data.profilePicture});
+            await sendSystemMessage(`Admin added ${data.data.username}`);
+        } else{
+            toast.error(data.message);
+        }
+    }
+
     useEffect(() => {
         if(!localStorage.getItem("username") || !localStorage.getItem("email") || !localStorage.getItem("profilePicture")){
 			getUser();
@@ -160,10 +190,6 @@ export default function Details() {
             });
 
             socket.on("kicked", (username) => {
-                setChatDetails(prevDetails => ({
-                    ...prevDetails,
-                    memberDetails: prevDetails.memberDetails.filter(member => member.username !== username)
-                }));
                 if(userName == username){
                     router.push("/");
                 }
@@ -213,6 +239,23 @@ export default function Details() {
         }
     }, [userName])
 
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (addUserRef.current && !addUserRef.current.contains(event.target)) {
+                setShowAddUser(false);
+                setAddUser("");
+            }
+        }
+
+        if (showAddUser) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showAddUser]);
+
     const handleSearchClose = () => {
         setShowSearch(false);
         setSearchQuery("");
@@ -224,13 +267,20 @@ export default function Details() {
 
   return (
     <>
-    <div className='h-[35vh] bg-[#1F1F1F] relative px-6 py-4'>
+    <div className='h-[35vh] bg-[#1F1F1F] relative px-6 py-4 select-none'>
         <Link href={`/chat/${chatname}`}>
             <FaArrowLeft className='absolute top-4 left-6' />
         </Link>
         {chatDetails.isOwner && <IoMdMore className='absolute top-4 right-6 h-7 w-7 cursor-pointer' onClick={() => setShowAdminSideMenu(p => !p)} />}
         {showAdminSideMenu && <AdminSideMenu setChatDetails={setChatDetails} chatname={chatname} /> }
-        {(chatDetails.isAdmin || chatDetails.isOwner) && <FiPlus className='absolute top-4 right-14 h-7 w-7 cursor-pointer' />}
+        {(chatDetails.isAdmin || chatDetails.isOwner) && (
+            showAddUser ? (
+                <div ref={addUserRef} className='absolute top-[15px] right-14 flex items-center gap-2'>
+                    <input type="text" value={addUser} onChange={(e) => setAddUser(e.target.value)} placeholder="Enter username" className="bg-[#272626] rounded-lg px-2 py-1 sm:text-base text-sm outline-none"/>
+                    <IoPersonAdd className='h-5 w-5 cursor-pointer' onClick={adduser}/>
+                </div>
+            ) : (<FiPlus className='absolute top-4 right-14 h-7 w-7 cursor-pointer' onClick={() => setShowAddUser(true)}/>)
+        )}
         <div className='flex flex-col justify-center items-center my-3'>
             <div className='relative'>
                 <img src={chatDetails.profilePicture || "/images/default-icon.jpeg"} alt="User profile image" className='rounded-full w-24 h-24' />
@@ -291,7 +341,7 @@ export default function Details() {
                     </div>
                 ))}
         </div>
-        <div className='absolute bottom-0 left-5 text-lg font-semibold cursor-pointer'>
+        <div className='absolute bottom-0 left-5 text-lg font-semibold cursor-pointer select-none'>
             {!chatDetails.isOwner && <div className='flex items-center gap-2' onClick={leaveChat}>
                 <FiLogOut />
                 <p>Leave Convo</p>

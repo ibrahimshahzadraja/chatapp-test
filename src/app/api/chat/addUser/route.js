@@ -57,7 +57,7 @@ export async function POST(req) {
     chat.members.push(user._id);
     await chat.save({validateBeforeSave: false});
 
-    const response = new ApiResponse("User added successfully", null, true, 200);
+    const response = new ApiResponse("User added successfully", {username: user.username, profilePicture: user.profilePicture}, true, 200);
 
     if(authData.tokenChanged){
 		response.cookies.set('accessToken', authData.accessToken, {

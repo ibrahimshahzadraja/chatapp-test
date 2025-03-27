@@ -27,7 +27,6 @@ export default function Chat() {
     const [msg, setMsg] = useState("");
 	const [userName, setUserName] = useState("");
 	const [image, setImage] = useState(null);
-	const [addUser, setAddUser] = useState("");
 	const [isRecording, setIsRecording] = useState(false);
 	const [holdTime, setHoldTime] = useState(0);
 	const [intervalId, setIntervalId] = useState(null);
@@ -167,27 +166,6 @@ export default function Chat() {
 		}
 
         console.log(data)
-	}
-
-	async function adduser() {
-		const response = await fetch("/api/chat/addUser", {
-			method: 'POST',
-			headers: {
-			  'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({chatname, username: addUser}),
-		});
-
-		const data = await response.json();
-
-		console.log(data);
-
-		if(data.success){
-			socket.emit("userJoined", {chatname, username: addUser, text: `Admin added ${addUser}`});
-			await sendSystemMessage(`Admin added ${addUser}`);
-			setChatDetails(cd => ({...cd, memberUsernames: [...cd.memberUsernames, addUser]}));			  
-			setAddUser("");
-		}
 	}
 
 	async function sendSystemMessage(text) {
