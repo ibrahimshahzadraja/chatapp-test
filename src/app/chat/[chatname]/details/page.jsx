@@ -43,8 +43,6 @@ export default function Details() {
 			});
 			const data = await response.json();
 
-            console.log(data.data);
-
             if(!data.data.isAuthorized){
                 router.push("/");
             }
@@ -267,7 +265,7 @@ export default function Details() {
 
   return (
     <>
-    <div className='h-[35vh] bg-[#1F1F1F] relative px-6 py-4 select-none'>
+    <div className='min-h-[35vh] bg-[#1F1F1F] relative px-6 py-4 select-none'>
         <Link href={`/chat/${chatname}`}>
             <FaArrowLeft className='absolute top-4 left-6' />
         </Link>
@@ -281,7 +279,7 @@ export default function Details() {
                 </div>
             ) : (<FiPlus className='absolute top-4 right-14 h-7 w-7 cursor-pointer' onClick={() => setShowAddUser(true)}/>)
         )}
-        <div className='flex flex-col justify-center items-center my-3'>
+        <div className='flex flex-col justify-center items-center sm:my-3 mt-9'>
             <div className='relative'>
                 <img src={chatDetails.profilePicture || "/images/default-icon.jpeg"} alt="User profile image" className='rounded-full w-24 h-24' />
                 {(chatDetails.isOwner || chatDetails.isAdmin) && <Link href={`/chat/${chatname}/edit-chat`}>

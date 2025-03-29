@@ -17,8 +17,12 @@ export async function POST(req) {
 
     const { chatname, password } = await req.json();
 
-    if(!chatname || !password){
-        return new ApiResponse("Chatname and Password are required", null, false, 400);
+    if(!chatname){
+        return new ApiResponse("Chatname is required", null, false, 400);
+    }
+
+    if(!password){
+        return new ApiResponse("Password is required", null, false, 400);
     }
     
     const chat = await Chat.findOne({chatname});

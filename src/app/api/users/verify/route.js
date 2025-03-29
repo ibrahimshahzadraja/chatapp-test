@@ -15,7 +15,7 @@ export async function POST(req) {
 
     const user = await User.findOne({_id: userId});
     if(!user){
-        return new ApiResponse("User not found", null, false, 404);
+        return new ApiResponse("User not found", {hasUserId: false}, false, 404);
     }
 
     if(user.isVerified){
@@ -24,13 +24,13 @@ export async function POST(req) {
 
     if(user.verifyCodeExpiry < Date.now()){
         await user.renewVerifyCode();
-        return new ApiResponse("Verify code expired", null, false, 400);
+        return new ApiResponse("Verify code expired. New code has been sent to your email.", null, false, 400);
     }
 
     const isVerifyCodeCorrect = await user.isVerifyCodeCorrect(verifyCode);
     if(!isVerifyCodeCorrect){
         await user.renewVerifyCode();
-        return new ApiResponse("Verify code is incorrect", null, false, 400);
+        return new ApiResponse("Verify code is incorrect. New code has been sent to your email", null, false, 400);
     }
     
     user.isVerified = true;
@@ -50,8 +50,16 @@ export async function POST(req) {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     path: '/',
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: 365 * 24 * 60 * 60
+    });
+    
+    response.cookies.set('userId', "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    sameSite: 'strict',
+    maxAge: 0
     });
 
     return response;

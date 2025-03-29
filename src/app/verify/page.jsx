@@ -39,8 +39,10 @@ export default function Verify() {
         body: JSON.stringify({verifyCode: code}),
       });
       const data = await response.json();
-      console.log(data)
-      if(data.success){
+      if(data.data?.hasUserId === false){
+        toast.error("User not found. Login to send code again!");
+        router.push("/login")
+      }else if(data.success){
         toast.success(data.message)
         router.push("/");
       } else{
@@ -55,15 +57,7 @@ export default function Verify() {
           <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">Verification Code</h1>
           <form id="otp-form" className="flex gap-2">
             {Array.from({ length: 6 }).map((_, index) => (
-              <input
-                key={index}
-                type="text"
-                maxLength="1"
-                className="shadow-xs text-gray-600 flex sm:w-[64px] w-[48px] items-center justify-center rounded-lg border border-stroke bg-white p-2 text-center text-2xl font-medium text-gray-5 outline-none sm:text-4xl dark:border-dark-3 dark:bg-white/5"
-                ref={(el) => (inputRefs.current[index] = el)}
-                onInput={(e) => handleInputChange(e, index)}
-                onKeyDown={(e) => handleKeyDown(e, index)}
-              />
+              <input key={index} type="text" maxLength="1" className="shadow-xs text-gray-600 flex sm:w-[64px] w-[48px] items-center justify-center rounded-lg border border-stroke bg-white p-2 text-center text-2xl font-medium text-gray-5 outline-none sm:text-4xl dark:border-dark-3 dark:bg-white/5" ref={(el) => (inputRefs.current[index] = el)} onInput={(e) => handleInputChange(e, index)} onKeyDown={(e) => handleKeyDown(e, index)}/>
             ))}
           </form>
         </div>

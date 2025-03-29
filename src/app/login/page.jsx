@@ -19,6 +19,9 @@ export default function Login(){
           });
           const data = await response.json();
           console.log(data);
+          if(data.data?.isVerified === false){
+            router.push("/verify");
+          }
           if(data.success){
             localStorage.setItem("username", "");
             localStorage.setItem("email", "");

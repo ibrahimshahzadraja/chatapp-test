@@ -8,7 +8,6 @@ import Options from './components/Options';
 
 export default function ChatPage() {
     const [chatname, setChatname] = useState("");
-    const [password, setPassword] = useState("");
     const [rooms, setRooms] = useState([]);
     const [filteredRooms, setFilteredRooms] = useState([]);
 

@@ -19,7 +19,12 @@ export async function POST(req) {
     }
 
     const userExists = await User.findOne({username});
-    if(userExists && userExists.isVerified){
+
+    if(!userExists.isVerfied){
+        await User.deleteOne({_id: userExists._id});
+    }
+
+    if(userExists){
         return new ApiResponse("Username already exists", null, false, 400);
     }
 
