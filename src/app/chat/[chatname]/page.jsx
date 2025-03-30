@@ -583,8 +583,22 @@ export default function Chat() {
     };
 
     const filteredMembers = chatDetails.memberDetails?.filter(member => 
-        mentionFilter === '' || member.username.toLowerCase().includes(mentionFilter.toLowerCase())
+        member.username !== userName && (mentionFilter === '' || member.username.toLowerCase().includes(mentionFilter.toLowerCase()))
     );
+
+	function highlightUsernames(text) {
+		const escapedUsernames = chatDetails.memberUsernames.filter(username => username != userName).map((username) =>
+		  username.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+		);
+	  
+		const usernamePattern = escapedUsernames.join("|");
+	  
+		const regex = new RegExp(`(@(${usernamePattern}))`, "g");
+	  
+		return text.replace(regex, (match) => {
+		  return `<span style="color: purple">${match}</span>`;
+		});
+	  }
 
     if(!chatDetails.isAuthorized){
         return(
@@ -623,7 +637,7 @@ export default function Chat() {
 					{message.text && !message.isSystemMessage && !message.isReply && <div>
 										<ReplyIcon className='text-white absolute top-0 right-0 w-4 cursor-pointer' onClick={() => setReply(p => ({...p, replyId: message.id, replyUsername: message.username, replyText: message.text}))}></ReplyIcon>
 										<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
-										<div className='sm:my-4 my-3 sm:text-lg text-base font-sans sm:font-medium break-words'>{message.text}</div>
+										<div className='sm:my-4 my-3 sm:text-lg text-base font-sans sm:font-medium break-words' dangerouslySetInnerHTML={{ __html: highlightUsernames(message.text)}}></div>
 										<div className='text-xs absolute bottom-0 right-0 m-1'>{new Date(message.createdAt).toLocaleTimeString('en-US', {hour: 'numeric',minute: 'numeric',hour12: true})}</div>
 									</div>}
 					{message.isReply && message.text && <div>
@@ -631,12 +645,12 @@ export default function Chat() {
 										<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
 										<div className={`${message.isSentByMe ? "bg-[#171616]" : "bg-[#333232]"} sm:mt-5 mt-4 px-2 py-5 rounded-md sm:text-lg text-base font-sans sm:font-medium break-words relative`}>
 											<div className='absolute top-0 left-0 text-[10px] px-1'>{message.replyUsername}</div>
-											{message.replyText && <div>{message.replyText}</div>}
+											{message.replyText && <div dangerouslySetInnerHTML={{ __html: highlightUsernames(message.replyText)}}></div>}
 											{message.replyImage && <img src={message.replyImage} alt='Image' className='w-30 h-20 m-1' /> }
 											{message.replyVideo && <video className="w-30 h-20 m-1 pointer-events-none" src={message.replyVideo} preload="metadata" muted></video>}
 											{message.replyFile.fileUrl && <FileMessage downloadFile={downloadFile} message={message} isReply={true} />}
 										</div>
-										<div className='sm:text-lg mb-3 text-base font-sans sm:font-medium break-words'>{message.text}</div>
+										<div className='sm:text-lg mb-3 text-base font-sans sm:font-medium break-words' dangerouslySetInnerHTML={{ __html: highlightUsernames(message.text)}}></div>
 										<div className='text-xs absolute bottom-0 right-0 m-1'>{new Date(message.createdAt).toLocaleTimeString('en-US', {hour: 'numeric',minute: 'numeric',hour12: true})}</div>
 									</div> }
 					{message.isReply && message.image.imageUrl && <div>
@@ -644,7 +658,7 @@ export default function Chat() {
 										<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
 										<div className={`${message.isSentByMe ? "bg-[#171616]" : "bg-[#333232]"} sm:mt-5 mt-4 px-2 py-5 rounded-md sm:text-lg text-base font-sans sm:font-medium break-words relative`}>
 											<div className='absolute top-0 left-0 text-[10px] px-1'>{message.replyUsername}</div>
-											{message.replyText && <div>{message.replyText}</div>}
+											{message.replyText && <div dangerouslySetInnerHTML={{ __html: highlightUsernames(message.replyText)}}></div>}
 											{message.replyImage && <img src={message.replyImage} alt='Image' className='w-30 h-20 m-1' /> }
 											{message.replyVideo && <video className="w-30 h-20 m-1 pointer-events-none" src={message.replyVideo} preload="metadata" muted></video>}
 											{message.replyFile.fileUrl && <FileMessage downloadFile={downloadFile} message={message} isReply={true} />}
@@ -665,7 +679,7 @@ export default function Chat() {
 										<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
 										<div className={`${message.isSentByMe ? "bg-[#171616]" : "bg-[#333232]"} sm:mt-5 mt-4 px-2 py-5 rounded-md sm:text-lg text-base font-sans sm:font-medium break-words relative`}>
 											<div className='absolute top-0 left-0 text-[10px] px-1'>{message.replyUsername}</div>
-											{message.replyText && <div>{message.replyText}</div>}
+											{message.replyText && <div dangerouslySetInnerHTML={{ __html: highlightUsernames(message.replyText)}}></div>}
 											{message.replyImage && <img src={message.replyImage} alt='Image' className='w-30 h-20 m-1' />}
 											{message.replyVideo && <video className="w-30 h-20 m-1 pointer-events-none" src={message.replyVideo} preload="metadata" muted></video>}
 											{message.replyFile.fileUrl && <FileMessage downloadFile={downloadFile} message={message} isReply={true} />}
@@ -682,7 +696,7 @@ export default function Chat() {
 										<div className='text-xs absolute top-0 left-0 m-1'>~{message.username}</div>
 										<div className={`${message.isSentByMe ? "bg-[#171616]" : "bg-[#333232]"} sm:mt-5 mt-4 px-2 py-5 rounded-md sm:text-lg text-base font-sans sm:font-medium break-words relative`}>
 											<div className='absolute top-0 left-0 text-[10px] px-1'>{message.replyUsername}</div>
-											{message.replyText && <div>{message.replyText}</div>}
+											{message.replyText && <div dangerouslySetInnerHTML={{ __html: highlightUsernames(message.replyText)}}></div>}
 											{message.replyImage && <img src={message.replyImage} alt='Image' className='w-30 h-20 m-1' />}
 											{message.replyVideo && <video className="w-30 h-20 m-1 pointer-events-none" src={message.replyVideo} preload="metadata" muted></video>}
 											{message.replyFile.fileUrl && <FileMessage downloadFile={downloadFile} message={message} isReply={true} />}
