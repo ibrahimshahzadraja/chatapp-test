@@ -34,7 +34,13 @@ export default function Chat() {
         }
         if(!localStorage.getItem("username") || !localStorage.getItem("email") || !localStorage.getItem("profilePicture")){
           getUser();
-      }
+        }else{
+          setUserDetails({
+            username: localStorage.getItem("username"),
+            email: localStorage.getItem("email"),
+            profilePicture: localStorage.getItem("profilePicture")
+          });
+        }
     }, []);
 
     async function sendSystemMessage(text) {
