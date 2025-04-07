@@ -20,7 +20,7 @@ export async function POST(req) {
 
     const userExists = await User.findOne({username});
 
-    if(!userExists?.isVerfied){
+    if(userExists && !userExists?.isVerfied){
         await User.deleteOne({_id: userExists._id});
     }
 
