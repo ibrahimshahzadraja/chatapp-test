@@ -102,7 +102,7 @@ export default function Chat() {
 
 		console.log(replyObj)
 
-        socket.emit("sendMessage", { chatname, username: userName ,message: msg, replyObj });
+        socket.emit("sendMessage", { chatname, profilePicture: chatDetails.profilePicture, allUsers: chatDetails.memberUsernames, username: userName ,message: msg, replyObj });
 		setMessages(m => [...m, {...replyObj, text: msg, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: false, username: userName, isSentByMe: true, createdAt: new Date().toISOString()}])
 
 		setMsg("");

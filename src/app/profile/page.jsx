@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 export default function Profile() {
 
     const [userDetails, setUserDetails] = useState({});
+    const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
     const router = useRouter();
 
     async function getUser() {
@@ -45,7 +46,33 @@ export default function Profile() {
         } else{
             setUserDetails(p => ({...p, username: localStorage.getItem("username"), email: localStorage.getItem("email"), profilePicture: localStorage.getItem("profilePicture")}));
         }
+
+        if(Notification.permission === "granted"){
+            setIsNotificationEnabled(true);
+        }
     }, [])
+
+    const subscribeUserToPush = async () => {
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: 'BJN9tbqwGIV5lw6qwEsxFqeZFjOmJ3rBfPJay8RFZXgNJ0_KiIGrRMmvG3eQvV1ZTfIMnzjamFJrRqoZs_R3kco'
+            });
+            setIsNotificationEnabled(true);
+            await fetch('http://localhost:4000/api/subscribe', {
+              method: 'POST',
+              body: JSON.stringify({subscription, username: userDetails.username}),
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+        } catch (error) {
+            alert("Please enable notifications in your browser settings.");
+        }
+      
+      };
+      
 
     async function logout(){
         const response = await fetch("/api/users/logout",
@@ -90,10 +117,12 @@ export default function Profile() {
                             <p>Edit profile information</p>
                         </div>
                     </Link>
-                    <div className='flex items-center gap-3 my-2'>
-                        <PiBellSimpleBold />
-                        <p>Notifications</p>
-                        <p className='text-[#438FFF]'>ON</p>
+                    <div className='flex items-center justify-between gap-3 my-2'>
+                        <div className='flex items-center gap-3'>
+                            <PiBellSimpleBold />
+                            <p>Notifications</p>
+                        </div>
+                        <p className='text-[#438FFF] mr-2 cursor-pointer' onClick={subscribeUserToPush}>{isNotificationEnabled ? "ON" : "OFF"}</p>
                     </div>
                     <div className='flex items-center gap-3 my-2'>
                         <AiOutlineLock />
