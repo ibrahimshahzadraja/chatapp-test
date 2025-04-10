@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import auth from "@/helpers/auth";
 import { uploadOnCloudinary } from "@/lib/uploadOnCloudinary";
 import { sendEmail } from "@/lib/resend";
+import {updateProfileSchema} from "@/schemas/updateProfileSchema";
 
 export async function POST(req){
     
@@ -22,6 +23,18 @@ export async function POST(req){
     const password = formData.get('password');
     const profilePicture = formData.get('profilePicture');
 
+    const data = {
+        username,
+        password,
+        profilePicture,
+    }
+
+    const result = updateProfileSchema.safeParse(data);
+
+    if(!result.success) {
+        return new ApiResponse(result.error.errors[0].message, null, false, 400);
+    }
+
     const user = await User.findOne({_id: new mongoose.Types.ObjectId(userId)});
 
     let isPasswordChanged = false;
@@ -30,10 +43,6 @@ export async function POST(req){
 
     if(!user){
         return new ApiResponse("User not found", null, false, 400)
-    }
-    
-    if(!username && !password && !profilePicture){
-        return new ApiResponse("Atleast one field is required", null, false, 400)
     }
 
     if(username){

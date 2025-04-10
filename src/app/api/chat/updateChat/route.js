@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import auth from "@/helpers/auth";
 import { uploadOnCloudinary } from "@/lib/uploadOnCloudinary";
 import Chat from "@/models/Chat";
+import {updateChatSchema} from "@/schemas/updateChatSchema";
 
 export async function POST(req){
     
@@ -23,6 +24,21 @@ export async function POST(req){
     const profilePicture = formData.get('profilePicture');
     const chatname = formData.get('chatname');
 
+    console.log(convoname, password, profilePicture, chatname);
+
+    const data = {
+        convoname,
+        password,
+        profilePicture,
+        chatname,
+    }
+
+    const result = updateChatSchema.safeParse(data);
+
+    if(!result.success){
+        return new ApiResponse(result.error.errors[0].message, null, false, 400);
+    }
+
     let isChatnameChanged = false;
     let isProfilePictureChanged = false;
 
@@ -40,10 +56,6 @@ export async function POST(req){
     
     if(!(chat.owner == userId || chat.admins.includes(new mongoose.Types.ObjectId(userId)))){
         return new ApiResponse("Access denied", {isAuthorized: false}, false, 400)
-    }
-    
-    if(!convoname && !password && !profilePicture){
-        return new ApiResponse("Atleast one field is required", null, false, 400)
     }
 
     if(convoname){

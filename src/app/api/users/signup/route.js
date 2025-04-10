@@ -3,6 +3,7 @@ import { uploadOnCloudinary } from "@/lib/uploadOnCloudinary";
 import User from "@/models/User";
 import ApiResponse from "@/helpers/ApiResponse";
 import { sendEmail } from "@/lib/resend";
+import { signUpSchema } from "@/schemas/signupSchema";
 
 
 export async function POST(req) {
@@ -14,13 +15,22 @@ export async function POST(req) {
     const password = formData.get('password');
     const profilePicture = formData.get('profilePicture');
 
-    if(!username || !email || !password || !profilePicture) {
-        return new ApiResponse("All fields are required", null, false, 400);
+    const data = {
+        username,
+        email,
+        password,
+        profilePicture,
+    }
+
+    const result = signUpSchema.safeParse(data);
+
+    if(!result.success) {
+        return new ApiResponse(result.error.errors[0].message, null, false, 400);
     }
 
     const userExists = await User.findOne({username});
 
-    if(!userExists.isVerfied){
+    if(userExists && !userExists.isVerfied){
         await User.deleteOne({_id: userExists._id});
     }
 

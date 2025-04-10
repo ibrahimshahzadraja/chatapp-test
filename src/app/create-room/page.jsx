@@ -46,7 +46,7 @@ export default function createRoom(){
     return(
         <>
         <div className='sm:px-8 px-4 flex flex-col items-center'>
-            <div className='flex justify-between items-center m-2 w-full'>
+            <div className='flex justify-between items-center mt-5 w-full'>
                 <h1 className='text-3xl font-semibold text-[#504F50]'>Secret Convos</h1>
                 <IoChatbubbleEllipsesOutline className='text-[#504F50] h-8 w-8' />
             </div>

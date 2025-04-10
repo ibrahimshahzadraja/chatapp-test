@@ -67,10 +67,10 @@ export default function Profile() {
     return (
         <>
         <div className='h-screen'>
-            <div className='fixed top-0 inset-x-0 -z-10 h-64 w-full bg-[#4D5151] rounded-b-[700px] blur-sm opacity-70 mx-auto'></div>
-            <div className='flex justify-between items-center absolute top-0 px-5 py-6 bg-[#1E1E1E] w-full'>
-                <h1 className='text-3xl font-semibold text-[#504F50]'>Secret Convos</h1>
-                <IoChatbubbleEllipsesOutline className='text-[#504F50] h-8 w-8' />
+            <div className='fixed top-0 inset-x-0 -z-10 h-64 w-full bg-[#4D5151] rounded-b-[700px] blur-md opacity-50 mx-auto'></div>
+            <div className='flex justify-between items-center absolute top-0 sm:px-8 px-4 mt-5 w-full'>
+                <h1 className='text-3xl font-semibold text-[#7c7c7c]'>Secret Convos</h1>
+                <IoChatbubbleEllipsesOutline className='text-[#7c7c7c] h-8 w-8' />
             </div>
             <div className='flex flex-col justify-center items-center h-full'>
                 <div className='relative'>

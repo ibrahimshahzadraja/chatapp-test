@@ -3,6 +3,7 @@ import ApiResponse from "@/helpers/ApiResponse";
 import { dbConnect } from "@/dbConfig/dbConfig";
 import auth from "@/helpers/auth";
 import { uploadOnCloudinary } from "@/lib/uploadOnCloudinary";
+import { createChatSchema } from "@/schemas/createChatSchema";
 
 export async function POST(req) {
     
@@ -20,8 +21,16 @@ export async function POST(req) {
     const password = formData.get('password');
     const profilePicture = formData.get('profilePicture');
 
-    if(!chatname || !password) {
-        return new ApiResponse("Chatname and password are required", null, false, 400);
+    const data = {
+        chatname,
+        password,
+        profilePicture,
+    }
+
+    const result = createChatSchema.safeParse(data);
+
+    if (!result.success) {
+        return new ApiResponse(result.error.errors[0].message, null, false, 400);
     }
 
     const chat = await Chat.findOne({chatname});

@@ -45,11 +45,9 @@ export default function EditProfile() {
         return;
     }
 
-      const formData = new FormData();
-
+      const formData = new FormData(document.getElementById('update-chat-form'));
       formData.append("convoname", d.convoname == chatname ? "" : d.convoname);
       formData.append("password", d.password);
-      formData.append("profilePicture", d.profilePicture);
       formData.append("chatname", chatname);
 
       try {
@@ -132,8 +130,8 @@ export default function EditProfile() {
                         className='w-full bg-[#030E1E] px-3 pt-5 pb-2 rounded-md border-[1px] border-[#4d4d4d] text-[#A4A4A4] peer placeholder-transparent focus:outline-none'
                         {...register("convoname", {
                           validate: (value) => {
-                              if (value && value.length < 5) {
-                                  return "Chatname must be at least 5 characters";
+                              if (value && value.length < 6) {
+                                  return "Chatname must be at least 6 characters";
                               }
                               return true;
                           }

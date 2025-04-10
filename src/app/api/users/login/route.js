@@ -2,15 +2,22 @@ import { dbConnect } from "@/dbConfig/dbConfig";
 import User from "@/models/User";
 import ApiResponse from "@/helpers/ApiResponse";
 import { generateAccessAndRefreshToken } from "@/utils/generateTokens";
-import { sendEmail } from "@/lib/resend";
+import { signinSchema } from "@/schemas/signinSchema";
 
 export async function POST(req) {
     await dbConnect();
 
     const {email, password} = await req.json();
 
-    if(!email || !password){
-        return new ApiResponse("Email and password are required", null, false, 400);
+    const data = {
+        email,
+        password
+    }
+
+    const result = signinSchema.safeParse(data);
+
+    if(!result.success) {
+        return new ApiResponse(result.error.errors[0].message, null, false, 400);
     }
 
     const user = await User.findOne({email});
