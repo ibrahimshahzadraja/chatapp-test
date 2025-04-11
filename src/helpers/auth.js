@@ -22,7 +22,7 @@ export default async function auth(req) {
 		        }
 				
 		        const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
-				req.userId = decodedToken ?._id;
+				req.userId = decodedToken?._id;
 				
 				return {accessToken, refreshToken, isAuthorized: true, tokenChanged: true};
 			}

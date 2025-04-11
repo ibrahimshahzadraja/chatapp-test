@@ -60,7 +60,7 @@ export default function Profile() {
               applicationServerKey: 'BJN9tbqwGIV5lw6qwEsxFqeZFjOmJ3rBfPJay8RFZXgNJ0_KiIGrRMmvG3eQvV1ZTfIMnzjamFJrRqoZs_R3kco'
             });
             setIsNotificationEnabled(true);
-            await fetch(process.env.SOCKET_BACKEND_URL + '/api/subscribe', {
+            await fetch('https://chatapp-backend-production-60cf.up.railway.app/api/subscribe', {
               method: 'POST',
               body: JSON.stringify({subscription, username: userDetails.username}),
               headers: {
