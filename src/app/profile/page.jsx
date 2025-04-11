@@ -60,7 +60,7 @@ export default function Profile() {
               applicationServerKey: process.env.VAPID_PUBLIC_KEY
             });
             setIsNotificationEnabled(true);
-            await fetch(process.env.SOCKET_BACKEND_URL + '/api/subscribe', {
+            await fetch('https://chatapp-backend-production-40ec.up.railway.app/api/subscribe', {
               method: 'POST',
               body: JSON.stringify({subscription, username: userDetails.username}),
               headers: {
