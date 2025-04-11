@@ -57,10 +57,10 @@ export default function Profile() {
             const registration = await navigator.serviceWorker.ready;
             const subscription = await registration.pushManager.subscribe({
               userVisibleOnly: true,
-              applicationServerKey: 'BJN9tbqwGIV5lw6qwEsxFqeZFjOmJ3rBfPJay8RFZXgNJ0_KiIGrRMmvG3eQvV1ZTfIMnzjamFJrRqoZs_R3kco'
+              applicationServerKey: process.env.VAPID_PUBLIC_KEY
             });
             setIsNotificationEnabled(true);
-            await fetch('https://chatapp-backend-production-60cf.up.railway.app/api/subscribe', {
+            await fetch(process.env.SOCKET_BACKEND_URL + '/api/subscribe', {
               method: 'POST',
               body: JSON.stringify({subscription, username: userDetails.username}),
               headers: {

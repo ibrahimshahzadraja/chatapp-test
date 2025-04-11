@@ -27,6 +27,7 @@ export default function Details() {
     const [addUser, setAddUser] = useState("");
     const [selectedMember, setSelectedMember] = useState(null);
     const [showAdminSideMenu, setShowAdminSideMenu] = useState(false);
+    const [showAdminPowers, setShowAdminPowers] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [showAddUser, setShowAddUser] = useState(false);
@@ -260,7 +261,8 @@ export default function Details() {
     };
 
     const handleMoreClick = (index) => {
-        setSelectedMember(selectedMember === index ? null : index);
+        setSelectedMember(index);
+        setShowAdminPowers(p => !p);
     };
 
   return (
@@ -321,11 +323,7 @@ export default function Details() {
                                 </p>
                                 <p className='text-[#00FF85]'>Online</p>
                             </div>
-                            {(chatDetails.isOwner || chatDetails.isAdmin) && 
-                            !member.isOwner && 
-                            member.username !== userName && 
-                                <AdminPowers isVisible={selectedMember === index} member={member} chatname={chatname} setChatDetails={setChatDetails} setShowAdminSideMenu={setShowAdminSideMenu} />
-                            }
+                            {showAdminPowers && <AdminPowers isVisible={selectedMember === index} member={member} chatname={chatname} setChatDetails={setChatDetails} setShowAdminPowers={setShowAdminPowers} />}
                             {(chatDetails.isOwner || chatDetails.isAdmin) && 
                             !member.isOwner && 
                             member.username !== userName && 
