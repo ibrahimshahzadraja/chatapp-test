@@ -53,7 +53,6 @@ export default function Profile() {
     }, [])
 
     const subscribeUserToPush = async () => {
-        try {
             const registration = await navigator.serviceWorker.ready;
             const subscription = await registration.pushManager.subscribe({
               userVisibleOnly: true,
@@ -67,9 +66,6 @@ export default function Profile() {
                 'Content-Type': 'application/json'
               }
             });
-        } catch (error) {
-            alert("Please enable notifications in your browser settings.");
-        }
       
       };
       
