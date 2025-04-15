@@ -56,7 +56,7 @@ export default function Profile() {
             const registration = await navigator.serviceWorker.ready;
             const subscription = await registration.pushManager.subscribe({
               userVisibleOnly: true,
-              applicationServerKey: process.env.VAPID_PUBLIC_KEY
+              applicationServerKey: 'BJN9tbqwGIV5lw6qwEsxFqeZFjOmJ3rBfPJay8RFZXgNJ0_KiIGrRMmvG3eQvV1ZTfIMnzjamFJrRqoZs_R3kco'
             });
             setIsNotificationEnabled(true);
             await fetch('https://chatapp-backend-production-40ec.up.railway.app/api/subscribe', {
