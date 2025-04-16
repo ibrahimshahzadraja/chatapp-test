@@ -83,7 +83,7 @@ export default function EditProfile() {
                 await sendSystemMessage(message, data.data.chatname);
                 socket.emit("chatProfileUpdate", {oldName: chatname, newName: data.data.chatname, profilePicture: data.data.profilePicture, message})
             }
-            router.push(`/chat/${d.convoname ? d.convoname : chatname }/details`);
+            router.push(`/chat/${encodeURIComponent(data.data.chatname)}/details`);
             setChatDetails(data.data);
             setImageUrl(data.data.profilePicture);
         } else{
