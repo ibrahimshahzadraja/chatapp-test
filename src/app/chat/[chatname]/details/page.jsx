@@ -275,7 +275,7 @@ export default function Details() {
         {showAdminSideMenu && <AdminSideMenu setChatDetails={setChatDetails} chatname={chatname} /> }
         {(chatDetails.isAdmin || chatDetails.isOwner) && (
             showAddUser ? (
-                <div ref={addUserRef} className='absolute top-[15px] right-14 flex items-center gap-2'>
+                <div ref={addUserRef} className={`absolute top-[15px] ${!chatDetails.isOwner ? 'right-14' : 'right-6'} flex items-center gap-2`}>
                     <input type="text" value={addUser} onChange={(e) => setAddUser(e.target.value)} placeholder="Enter username" className="bg-[#272626] rounded-lg px-2 py-1 sm:text-base text-sm outline-none"/>
                     <IoPersonAdd className='h-5 w-5 cursor-pointer' onClick={adduser}/>
                 </div>
