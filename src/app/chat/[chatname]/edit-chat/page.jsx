@@ -19,6 +19,18 @@ export default function EditProfile() {
 
     const router = useRouter();
 
+    async function sendSystemMessage(text, chatname) {
+		const response = await fetch("/api/message/systemMessage", {
+			method: 'POST',
+			headers: {
+			  'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({chatname, text, id: "NULL"}),
+		});
+
+		const data = await response.json();
+	}
+
     async function getChat() {
         try {
             const response = await fetch("/api/chat/get",
@@ -66,6 +78,14 @@ export default function EditProfile() {
         }
         if(data.success){
             toast.success(data.message);
+            if(data.data.isChatnameChanged && !data.data.isProfilePictureChanged){
+                await sendSystemMessage(`${data.data.user} changed chat name from ${chatname} to ${data.data.chatname}`, data.data.chatname);
+                socket.emit("chatChanged", {chatname: data.data.chatname, text: `${data.data.user} changed chat name from ${chatname} to ${data.data.chatname}`})
+            }
+            if(data.data.isProfilePictureChanged){
+                await sendSystemMessage(`${data.data.user} updated chat profile`, data.data.chatname);
+                socket.emit("chatUpdated", {chatname: data.data.chatname, profilePicture: data.data.profilePicture, prevChatname: chatname})
+            }
             router.push(`/chat/${d.convoname ? d.convoname : chatname }/details`);
             setChatDetails(data.data);
             setImageUrl(data.data.profilePicture);
