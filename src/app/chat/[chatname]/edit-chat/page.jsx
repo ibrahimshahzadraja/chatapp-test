@@ -78,13 +78,10 @@ export default function EditProfile() {
         }
         if(data.success){
             toast.success(data.message);
-            if(data.data.isChatnameChanged && !data.data.isProfilePictureChanged){
-                await sendSystemMessage(`${data.data.user} changed chat name from ${chatname} to ${data.data.chatname}`, data.data.chatname);
-                socket.emit("chatChanged", {chatname: data.data.chatname, text: `${data.data.user} changed chat name from ${chatname} to ${data.data.chatname}`})
-            }
-            if(data.data.isProfilePictureChanged){
-                await sendSystemMessage(`${data.data.user} updated chat profile`, data.data.chatname);
-                socket.emit("chatUpdated", {chatname: data.data.chatname, profilePicture: data.data.profilePicture, prevChatname: chatname})
+            if(data.data.isChatnameChanged || data.data.isProfilePictureChanged){
+                let message = data.data.isProfilePictureChanged ? `${data.data.user} updated chat profile` : `${data.data.user} changed chat name from ${chatname} to ${data.data.chatname}`;
+                await sendSystemMessage(message, data.data.chatname);
+                socket.emit("chatProfileUpdate", {oldName: chatname, newName: data.data.chatname, profilePicture: data.data.profilePicture, message})
             }
             router.push(`/chat/${d.convoname ? d.convoname : chatname }/details`);
             setChatDetails(data.data);

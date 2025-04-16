@@ -459,11 +459,6 @@ export default function Chat() {
 			socket.on("roomDeleted", (message) => {
 				router.push("/")
 			})
-
-			socket.on("chatChanged", (text) => {
-				console.log("CHATCHANGE", text)
-				setMessages(m => [...m, {text, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
-			})
 			
 			socket.on("kicked", (username, userAdmin) => {
 				setMessages(m => [...m, {text: `${userAdmin} kicked ${username}`, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
@@ -509,10 +504,13 @@ export default function Chat() {
 			socket.on('user-stopped-typing', () => {
 				setIsTyping(false);
 			});
-			socket.on("chatUpdated", (cname, profilePicture) => {
-				socket.emit("joinRoom", cname);
-				setChatDetails(cd => ({...cd, chatname: cname, profilePicture}));
-				router.push(`/chat/${cname}`)
+			socket.on("chatProfileUpdate", (oldName, newName, profilePicture, message) => {
+				setChatDetails(cd => ({...cd, chatname: newName, profilePicture}));
+				setMessages(m => [...m, {text: message, image: {imageUrl: "", imageName: ""},voice: "",video: {videoUrl: "", videoName: ""},file: {fileUrl: "", fileName: ""}, isSystemMessage: true, username: "", isSentByMe: false, createdAt: new Date().toISOString()}]);
+				if(oldName !== newName){
+					socket.emit("joinRoom", newName);
+					router.push(`/chat/${encodeURIComponent(cname)}`)
+				}
 			})
 			socket.on("backgroundImageChanged", (backgroundImage) => {
 				setChatDetails(cd => ({...cd, backgroundImage}));
