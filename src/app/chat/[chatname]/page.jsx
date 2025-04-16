@@ -18,8 +18,10 @@ import FileMessage from '@/app/components/FileMessage';
 let typingTimeout;
 
 export default function Chat() {
-    const { chatname } = useParams();
+    let { chatname } = useParams();
     const router = useRouter();
+
+	chatname = decodeURIComponent(chatname);
 
 	const [isTyping, setIsTyping] = useState(false);
 	const [messages, setMessages] = useState([]);
@@ -637,7 +639,7 @@ export default function Chat() {
 			<Link href={'/'}>
 				<FaArrowLeft className='sm:ml-4' />
 			</Link>
-			<Link className='flex items-center gap-4 w-[80%]' href={`/chat/${chatDetails.chatname}/details`}>
+			<Link className='flex items-center gap-4 w-[80%]' href={`/chat/${encodeURIComponent(chatDetails.chatname)}/details`}>
 				<img src={chatDetails.profilePicture} alt="Chat Profile" className='w-16 h-16 rounded-full border-2 border-black' />
 				<div>
 					<h1 className='font-semibold text-xl'>{chatDetails.chatname}</h1>

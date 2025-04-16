@@ -33,7 +33,7 @@ export default function AdminSideMenu({setChatDetails, chatname}) {
 
   return (
     <div className={`w-28 bg-[#200F2F] rounded-md select-none absolute right-16 flex flex-col z-50 divide-y divide-gray-700`}>
-            <Link href={`/chat/${chatname}/edit-chat`}>
+            <Link href={`/chat/${encodeURIComponent(chatname)}/edit-chat`}>
                 <p className='text-[#6509C0] text-center rounded-sm py-3 cursor-pointer hover:bg-[#2d1846] transition-colors'>Edit Convo</p>
             </Link>
             <div className='relative hover:bg-[#2d1846] rounded-sm transition-colors'>

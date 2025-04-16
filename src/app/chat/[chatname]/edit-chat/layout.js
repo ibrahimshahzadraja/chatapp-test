@@ -2,7 +2,7 @@ export async function generateMetadata({ params }) {
     const { chatname } = await params;
   
     return {
-      title: `${chatname} - Admin Panel`,
+      title: `${decodeURIComponent(chatname)} - Admin Panel`,
     };
   }
   

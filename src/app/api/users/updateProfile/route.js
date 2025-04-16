@@ -31,6 +31,8 @@ export async function POST(req){
 
     const result = updateProfileSchema.safeParse(data);
 
+    console.log(result);
+
     if(!result.success) {
         return new ApiResponse(result.error.errors[0].message, null, false, 400);
     }

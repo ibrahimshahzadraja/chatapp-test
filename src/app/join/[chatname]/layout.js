@@ -3,7 +3,7 @@ export async function generateMetadata({params}) {
     const {chatname} = await params;
   
     return {
-      title: `${chatname} - Join`,
+      title: `${decodeURIComponent(chatname)} - Join`,
     };
   }
   

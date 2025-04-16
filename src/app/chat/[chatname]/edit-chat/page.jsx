@@ -14,7 +14,8 @@ export default function EditProfile() {
     const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm();
     const fileInput = watch('profilePicture');
 
-    const { chatname } = useParams();
+    let { chatname } = useParams();
+    chatname = decodeURIComponent(chatname);
 
     const router = useRouter();
 
@@ -90,7 +91,7 @@ export default function EditProfile() {
   return (
     <>
     <div className="relative flex items-center my-7">
-        <Link href={`/chat/${chatname}/details`}>
+        <Link href={`/chat/${encodeURIComponent(chatname)}/details`}>
             <FaArrowLeft className='absolute left-4 bottom-1' />
         </Link>
         <h1 className="text-lg font-semibold mx-auto">Edit Convo</h1>

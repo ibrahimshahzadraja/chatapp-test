@@ -74,14 +74,14 @@ export default function ChatPage() {
                 </div>
                 <div className='relative mt-6'>
                     <input type="text" placeholder='Join a Convo...' value={chatname} onChange={handleSearchInput} className='bg-[#1F1F1F] rounded-2xl sm:px-4 px-2 py-2 sm:text-lg w-full text-[#919191] placeholder:text-[#504F50] font-semibold' />
-                    <Link href={chatname === "" ? "" : `/join/${chatname}`}>
+                    <Link href={chatname === "" ? "" : `/join/${encodeURIComponent(chatname)}`}>
                         <BsSearch className='text-[#504F50] h-6 w-6 absolute right-0 top-2 mx-4 cursor-pointer' />
                     </Link>
                 </div>
                 <div className='my-4 flex flex-col items-center gap-4'>
                     {filteredRooms.map((r, index) => {
                         return(
-                            <Link href={`/chat/${r.chatname}`} className='w-full' key={index}>
+                            <Link href={`/chat/${encodeURIComponent(r.chatname)}`} className='w-full' key={index}>
                                 <div className='sm:h-32 h-20 bg-[#1F1F1F] sm:px-3 px-1 sm:py-5 py-2 sm:w-[600px] w-full rounded-3xl border-[1px] border-[#3b3b3b] flex items-center mx-auto'>
                                     <img src={r.profilePicture} alt="image" className='sm:h-20 sm:w-20 h-16 w-16 rounded-full sm:ml-4 ml-2' />
                                     <div className='sm:ml-8 ml-3'>

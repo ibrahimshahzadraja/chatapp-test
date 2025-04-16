@@ -37,7 +37,7 @@ export default function createRoom(){
         if(data.success){
             toast.success(data.message);
             socket.emit("joinRoom", data.data);
-            router.push(`/chat/${data.data}`);
+            router.push(`/chat/${encodeURIComponent(data.data)}`);
         } else{
             toast.error(data.message);
         }

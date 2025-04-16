@@ -11,7 +11,8 @@ import Link from 'next/link';
 
 export default function Chat() {
 
-  const { chatname } = useParams();
+  let { chatname } = useParams();
+  chatname = decodeURIComponent(chatname);
   const [userDetails, setUserDetails] = useState({});
 
   const router = useRouter();
@@ -69,7 +70,7 @@ export default function Chat() {
     if(data.success){
         socket.emit("userJoined", {chatname, username: userDetails.username, text: `${userDetails.username} joined the chat`, profilePicture: userDetails.profilePicture});
         await sendSystemMessage(`${userDetails.username} joined the chat`);
-      router.push(`/chat/${chatname}`);
+      router.push(`/chat/${encodeURIComponent(chatname)}`);
     } else{
       toast.error(data.message);
     }

@@ -18,7 +18,8 @@ import { IoPersonAdd } from "react-icons/io5";
 
 export default function Details() {
 
-    const { chatname } = useParams();
+    let { chatname } = useParams();
+    chatname = decodeURIComponent(chatname);
 
     const router = useRouter();
 
@@ -268,7 +269,7 @@ export default function Details() {
   return (
     <>
     <div className='min-h-[35vh] bg-[#1F1F1F] relative px-6 py-4 select-none'>
-        <Link href={`/chat/${chatname}`}>
+        <Link href={`/chat/${encodeURIComponent(chatname)}`}>
             <FaArrowLeft className='absolute top-4 left-6' />
         </Link>
         {chatDetails.isOwner && <IoMdMore className='absolute top-4 right-6 h-7 w-7 cursor-pointer' onClick={() => setShowAdminSideMenu(p => !p)} />}
@@ -284,7 +285,7 @@ export default function Details() {
         <div className='flex flex-col justify-center items-center sm:my-3 mt-9'>
             <div className='relative'>
                 <img src={chatDetails.profilePicture || "/images/default-icon.jpeg"} alt="User profile image" className='rounded-full w-24 h-24' />
-                {(chatDetails.isOwner || chatDetails.isAdmin) && <Link href={`/chat/${chatname}/edit-chat`}>
+                {(chatDetails.isOwner || chatDetails.isAdmin) && <Link href={`/chat/${encodeURIComponent(chatname)}/edit-chat`}>
                     <FaPencil className='bg-[#434343] rounded-full w-9 h-9 p-1 border-4 border-[#202020] absolute bottom-0 right-0' />
                 </Link>}
             </div>

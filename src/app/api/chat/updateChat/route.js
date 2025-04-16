@@ -24,8 +24,6 @@ export async function POST(req){
     const profilePicture = formData.get('profilePicture');
     const chatname = formData.get('chatname');
 
-    console.log(convoname, password, profilePicture, chatname);
-
     const data = {
         convoname,
         password,
