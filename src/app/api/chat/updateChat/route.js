@@ -5,7 +5,6 @@ import mongoose from "mongoose";
 import auth from "@/helpers/auth";
 import { uploadOnCloudinary } from "@/lib/uploadOnCloudinary";
 import Chat from "@/models/Chat";
-import {updateChatSchema} from "@/schemas/updateChatSchema";
 
 export async function POST(req){
     
@@ -23,19 +22,6 @@ export async function POST(req){
     const password = formData.get('password');
     const profilePicture = formData.get('profilePicture');
     const chatname = formData.get('chatname');
-
-    const data = {
-        convoname,
-        password,
-        profilePicture,
-        chatname,
-    }
-
-    const result = updateChatSchema.safeParse(data);
-
-    if(!result.success){
-        return new ApiResponse(result.error.errors[0].message, null, false, 400);
-    }
 
     let isChatnameChanged = false;
     let isProfilePictureChanged = false;
@@ -57,7 +43,7 @@ export async function POST(req){
     }
 
     if(convoname){
-        const chatWithSameName = await Chat.findOne({chatname: convoname});
+        const chatWithSameName = await Chat.findOne({chatname: convoname, _id: {$ne: chat._id}});
         if(chatWithSameName){
             return new ApiResponse("Chat with this name already exists", null, false, 400)
         }

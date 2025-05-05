@@ -92,7 +92,7 @@ export default function Profile() {
         <div className='h-screen'>
             <div className='fixed top-0 inset-x-0 -z-10 h-64 w-full bg-[#4D5151] rounded-b-[700px] blur-md opacity-50 mx-auto'></div>
             <div className='flex justify-between items-center absolute top-0 sm:px-8 px-4 mt-5 w-full'>
-                <h1 className='text-3xl font-semibold text-[#7c7c7c]'>Secret Convos</h1>
+                <h1 className='text-3xl font-semibold text-[#7c7c7c]'>Convora</h1>
                 <IoChatbubbleEllipsesOutline className='text-[#7c7c7c] h-8 w-8' />
             </div>
             <div className='flex flex-col justify-center items-center h-full'>

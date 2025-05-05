@@ -1,7 +1,7 @@
 export async function generateMetadata() {
   
     return {
-      title: `Secret Convos - Signup`,
+      title: `Convora - Signup`,
     };
   }
   

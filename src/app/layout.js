@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Secret Convos",
-  description: "Secret Convos allows users to create chat rooms and engage in real-time conversations with others. Users can create and join rooms effortlessly, making communication easy and interactive.",
+  title: "Convora",
+  description: "Convora allows users to create chat rooms and engage in real-time conversations with others. Users can create and join rooms effortlessly, making communication easy and interactive.",
 };
 
 export default function RootLayout({ children }) {

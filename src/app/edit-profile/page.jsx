@@ -103,7 +103,7 @@ export default function EditProfile() {
   return (
     <>
     <div className='flex justify-between items-center mt-5 px-4'>
-        <h1 className='text-3xl font-semibold text-[#504F50]'>Secret Convos</h1>
+        <h1 className='text-3xl font-semibold text-[#504F50]'>Convora</h1>
         <IoChatbubbleEllipsesOutline className='text-[#504F50] h-8 w-8' />
     </div>
     <div className="relative flex items-center my-3">
