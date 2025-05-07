@@ -16,6 +16,20 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Convora",
   description: "Convora allows users to create chat rooms and engage in real-time conversations with others. Users can create and join rooms effortlessly, making communication easy and interactive.",
+  keywords: ['convora', 'chat', 'chatting', 'convora chat', 'Convora', 'Chat Convora', 'Convora Chat', 'Secure chat', 'conversation', 'message', 'messaging', 'real-time chat', 'chat rooms', 'group chat', 'instant messaging', 'online chat', 'chat application', 'chat platform', 'chat service'],
+  openGraph: {
+    title: 'Convora',
+    description: 'Convora - A platform which allows users to create chat rooms and engage in real-time conversations with others. Users can create and join rooms effortlessly, making communication easy and interactive.',
+    url: 'https://convora.site',
+    siteName: 'Convora',
+    images: [
+      {
+        url: '/logo.jpg',
+        width: 1280,
+        height: 1280,
+      },
+    ],
+  },
 };
 
 export default function RootLayout({ children }) {
